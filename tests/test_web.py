@@ -266,12 +266,63 @@ class TestWebLLMIntegration:
         style_found = any("style" in (d.label or "").lower() for d in dropdowns)
         assert style_found, "Style dropdown not found"
 
+    def test_ui_has_model_dropdown(self):
+        from hypnogen.web import create_ui
+
+        app = create_ui()
+        dropdowns = [b for b in app.blocks.values() if isinstance(b, gr.Dropdown)]
+        model_found = any("model" in (d.label or "").lower() for d in dropdowns)
+        assert model_found, "AI Model dropdown not found"
+
+    def test_ui_has_depth_dropdown(self):
+        from hypnogen.web import create_ui
+
+        app = create_ui()
+        dropdowns = [b for b in app.blocks.values() if isinstance(b, gr.Dropdown)]
+        depth_found = any("depth" in (d.label or "").lower() for d in dropdowns)
+        assert depth_found, "Induction Depth dropdown not found"
+
+    def test_ui_has_density_dropdown(self):
+        from hypnogen.web import create_ui
+
+        app = create_ui()
+        dropdowns = [b for b in app.blocks.values() if isinstance(b, gr.Dropdown)]
+        density_found = any("density" in (d.label or "").lower() for d in dropdowns)
+        assert density_found, "Embedded Command Density dropdown not found"
+
+    def test_ui_has_focus_input(self):
+        from hypnogen.web import create_ui
+
+        app = create_ui()
+        textareas = [b for b in app.blocks.values() if isinstance(b, gr.Textbox)]
+        focus_found = any("theme" in (t.label or "").lower() or "focus" in (t.label or "").lower() for t in textareas)
+        assert focus_found, "Theme/Focus input not found"
+
+    def test_ui_has_custom_instructions_input(self):
+        from hypnogen.web import create_ui
+
+        app = create_ui()
+        textareas = [b for b in app.blocks.values() if isinstance(b, gr.Textbox)]
+        custom_found = any("custom" in (t.label or "").lower() or "instruction" in (t.label or "").lower() for t in textareas)
+        assert custom_found, "Custom Instructions input not found"
+
+    def test_ui_has_duration_input(self):
+        from hypnogen.web import create_ui
+
+        app = create_ui()
+        numbers = [b for b in app.blocks.values() if isinstance(b, gr.Number)]
+        duration_found = any("duration" in (n.label or "").lower() for n in numbers)
+        assert duration_found, "Target Duration input not found"
+
     @patch("hypnogen.web.llm_generate_script")
     def test_ai_generate_script_calls_llm(self, mock_llm):
         from hypnogen.web import ai_generate_script
 
         mock_llm.return_value = "And now... <cmd>relax deeply</cmd>..."
-        result = ai_generate_script("build confidence", "ericksonian")
+        result = ai_generate_script(
+            "build confidence", "ericksonian", 10,
+            "medium", "medium", "", "", "Gemini Pro",
+        )
         assert isinstance(result, str)
         assert "relax" in result
         mock_llm.assert_called_once()
@@ -291,7 +342,7 @@ class TestWebLLMIntegration:
         from hypnogen.web import ai_generate_script
 
         with pytest.raises(gr.Error):
-            ai_generate_script("", "ericksonian")
+            ai_generate_script("", "ericksonian", 10, "medium", "medium", "", "", "Gemini Pro")
 
     def test_ai_generate_affirmations_empty_goal_raises(self):
         from hypnogen.web import ai_generate_affirmations
@@ -306,7 +357,7 @@ class TestWebLLMIntegration:
 
         mock_llm.side_effect = LLMError("API timeout")
         with pytest.raises(gr.Error):
-            ai_generate_script("relax", "ericksonian")
+            ai_generate_script("relax", "ericksonian", 10, "medium", "medium", "", "", "Gemini Pro")
 
     def test_ui_has_generate_both_button(self):
         from hypnogen.web import create_ui
@@ -324,10 +375,15 @@ class TestWebLLMIntegration:
         mock_script.return_value = "Test script content"
         mock_aff.return_value = ["I am calm", "I am focused"]
 
-        script, aff_text = ai_generate_both("relax", "ericksonian", 20)
+        script, aff_text = ai_generate_both(
+            "relax", "ericksonian", 20,
+            10, "medium", "medium", "", "", "Gemini Pro",
+        )
 
         mock_script.assert_called_once_with(
-            goal="relax", duration_minutes=10, style="ericksonian"
+            goal="relax", duration_minutes=10, style="ericksonian",
+            depth="medium", command_density="medium",
+            focus_theme="", custom_instructions="",
         )
         mock_aff.assert_called_once_with(goal="relax", count=20)
         assert script == "Test script content"
@@ -337,7 +393,7 @@ class TestWebLLMIntegration:
         from hypnogen.web import ai_generate_both
 
         with pytest.raises(gr.Error):
-            ai_generate_both("", "ericksonian", 20)
+            ai_generate_both("", "ericksonian", 20, 10, "medium", "medium", "", "", "Gemini Pro")
 
     @patch("hypnogen.web.llm_generate_script")
     def test_ai_generate_both_llm_error_raises_gr_error(self, mock_llm):
@@ -346,4 +402,4 @@ class TestWebLLMIntegration:
 
         mock_llm.side_effect = LLMError("API timeout")
         with pytest.raises(gr.Error):
-            ai_generate_both("relax", "ericksonian", 20)
+            ai_generate_both("relax", "ericksonian", 20, 10, "medium", "medium", "", "", "Gemini Pro")

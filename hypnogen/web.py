@@ -69,8 +69,18 @@ def _pad_or_trim(audio: np.ndarray, target_samples: int) -> np.ndarray:
     return audio[:target_samples]
 
 
-def _render_shepherd(segments: list, voice: str, target_sr: int) -> np.ndarray:
+def _render_shepherd(
+    segments: list,
+    voice: str,
+    target_sr: int,
+    progress: gr.Progress | None = None,
+    progress_offset: float = 0.0,
+    progress_scale: float = 1.0,
+) -> np.ndarray:
     audio_parts = []
+    tts_segments = [s for s in segments if s["type"] in ("text", "command")]
+    total_tts = len(tts_segments)
+    tts_done = 0
 
     for segment in segments:
         seg_type = segment["type"]
@@ -79,6 +89,10 @@ def _render_shepherd(segments: list, voice: str, target_sr: int) -> np.ndarray:
             audio, tts_sr = synthesize(segment["text"], voice=voice, speed=0.9)
             audio = _resample_if_needed(audio, tts_sr, target_sr)
             audio_parts.append(_to_stereo(audio))
+            tts_done += 1
+            if progress and total_tts > 0:
+                frac = progress_offset + (tts_done / total_tts) * progress_scale
+                progress(frac, desc=f"Shepherd TTS: {tts_done}/{total_tts} segments")
 
         elif seg_type == "command":
             audio, tts_sr = synthesize(segment["text"], voice=voice, speed=0.9)
@@ -90,6 +104,10 @@ def _render_shepherd(segments: list, voice: str, target_sr: int) -> np.ndarray:
 
             audio = _resample_if_needed(audio, tts_sr, target_sr)
             audio_parts.append(_to_stereo(audio))
+            tts_done += 1
+            if progress and total_tts > 0:
+                frac = progress_offset + (tts_done / total_tts) * progress_scale
+                progress(frac, desc=f"Shepherd TTS: {tts_done}/{total_tts} segments")
 
         elif seg_type == "pause":
             duration_ms = segment["duration_ms"]
@@ -109,24 +127,44 @@ def _render_swarm(
     sr: int,
     voice: str,
     rng: np.random.Generator,
+    progress: gr.Progress | None = None,
+    progress_offset: float = 0.0,
+    progress_scale: float = 1.0,
 ) -> np.ndarray:
     affirmation_audios = []
-    for aff in affirmations:
+    total = len(affirmations)
+    for i, aff in enumerate(affirmations):
         audio, tts_sr = synthesize(aff, voice=voice, speed=1.3)
         audio = _resample_if_needed(audio, tts_sr, sr)
         affirmation_audios.append(audio)
+        if progress and total > 0:
+            frac = progress_offset + ((i + 1) / total) * progress_scale
+            progress(frac, desc=f"Swarm TTS: {i + 1}/{total} affirmations")
 
     return generate_swarm(affirmation_audios, duration_sec, sr=sr, rng=rng)
 
 
-def ai_generate_script(goal: str, style: str) -> str:
+def ai_generate_script(
+    goal: str,
+    style: str,
+    duration_minutes: float,
+    depth: str,
+    command_density: str,
+    focus_theme: str,
+    custom_instructions: str,
+    model: str,
+) -> str:
     if not goal or not goal.strip():
         raise gr.Error("Please enter a goal for script generation")
     try:
         script = llm_generate_script(
             goal=goal.strip(),
-            duration_minutes=10,
+            duration_minutes=int(duration_minutes) if duration_minutes else 10,
             style=style or "ericksonian",
+            depth=depth or "medium",
+            command_density=command_density or "medium",
+            focus_theme=focus_theme.strip() if focus_theme else "",
+            custom_instructions=custom_instructions.strip() if custom_instructions else "",
         )
         return script
     except LLMError as e:
@@ -146,14 +184,28 @@ def ai_generate_affirmations(goal: str, count: int = 20) -> str:
         raise gr.Error(f"LLM affirmation generation failed: {e}")
 
 
-def ai_generate_both(goal: str, style: str, count: int) -> tuple[str, str]:
+def ai_generate_both(
+    goal: str,
+    style: str,
+    count: int,
+    duration_minutes: float,
+    depth: str,
+    command_density: str,
+    focus_theme: str,
+    custom_instructions: str,
+    model: str,
+) -> tuple[str, str]:
     if not goal or not goal.strip():
         raise gr.Error("Please enter a goal for generation")
     try:
         script = llm_generate_script(
             goal=goal.strip(),
-            duration_minutes=10,
+            duration_minutes=int(duration_minutes) if duration_minutes else 10,
             style=style or "ericksonian",
+            depth=depth or "medium",
+            command_density=command_density or "medium",
+            focus_theme=focus_theme.strip() if focus_theme else "",
+            custom_instructions=custom_instructions.strip() if custom_instructions else "",
         )
         affirmations = llm_generate_affirmations(
             goal=goal.strip(),
@@ -169,19 +221,14 @@ def generate_audio(
     affirmations_text: str,
     voice: str,
     seed: int | None,
+    progress: gr.Progress = gr.Progress(),
 ) -> tuple[tuple[int, np.ndarray], str, str]:
-    """Generate audio from UI inputs.
-    
-    Duration is auto-calculated from the script audio length.
-    
-    Returns:
-        ((sample_rate, audio_array), filepath, info_text) for Gradio audio component, download, and status.
-    """
     sr = OUTPUT_SAMPLE_RATE
     
     seed_val = int(seed) if seed is not None else None
     rng = np.random.default_rng(seed_val)
     
+    progress(0, desc="Parsing script...")
     segments = parse_script(script_text)
     valid, msg = validate_marking_density(segments)
     
@@ -195,7 +242,10 @@ def generate_audio(
     if not valid_affirmations:
         valid_affirmations = ["I am calm"]
     
-    shepherd_audio = _render_shepherd(segments, voice, sr)
+    shepherd_audio = _render_shepherd(
+        segments, voice, sr,
+        progress=progress, progress_offset=0.0, progress_scale=0.6,
+    )
     length_sec = shepherd_audio.shape[0] // sr
     
     if length_sec < 60:
@@ -203,7 +253,12 @@ def generate_audio(
         shepherd_audio = _pad_or_trim(shepherd_audio, min_samples)
         length_sec = 60
     
-    swarm_audio = _render_swarm(valid_affirmations, length_sec, sr, voice, rng)
+    swarm_audio = _render_swarm(
+        valid_affirmations, length_sec, sr, voice, rng,
+        progress=progress, progress_offset=0.6, progress_scale=0.3,
+    )
+
+    progress(0.9, desc="Generating binaural bed...")
     bed_audio = generate_bed(duration_sec=length_sec, sr=sr, rng=rng)
     
     target_samples = length_sec * sr
@@ -211,6 +266,7 @@ def generate_audio(
     swarm_audio = _pad_or_trim(swarm_audio, target_samples)
     bed_audio = _pad_or_trim(bed_audio, target_samples)
     
+    progress(0.95, desc="Mixing layers & applying epochs...")
     boundary_events = select_boundary_events(rng)
     mixed = mix_layers(
         shepherd=shepherd_audio,
@@ -222,12 +278,14 @@ def generate_audio(
         rng=rng,
     )
     
+    progress(0.98, desc="Exporting WAV...")
     temp_dir = tempfile.gettempdir()
     temp_path = os.path.join(temp_dir, f"hypnogen_{seed_val or 'random'}.wav")
     write_wav(temp_path, mixed, sr)
     
     audio_mono = np.mean(mixed, axis=1) if mixed.ndim == 2 else mixed
     
+    progress(1.0, desc="Done!")
     info_text = f"Generated {length_sec}s session from script"
     
     return (sr, audio_mono), temp_path, info_text
@@ -245,21 +303,55 @@ def create_ui() -> gr.Blocks:
                     label="Goal",
                     placeholder="e.g., build confidence, sleep better, overcome anxiety",
                     lines=1,
+                    scale=3,
                 )
+                model_dropdown = gr.Dropdown(
+                    choices=[m[0] for m in AVAILABLE_MODELS],
+                    value=AVAILABLE_MODELS[0][0],
+                    label="AI Model",
+                    scale=1,
+                )
+            with gr.Row():
                 style_input = gr.Dropdown(
                     choices=["ericksonian", "permissive", "authoritative", "conversational"],
                     value="ericksonian",
                     label="Script Style",
+                )
+                depth_input = gr.Dropdown(
+                    choices=["light", "medium", "deep", "somnambulistic"],
+                    value="medium",
+                    label="Induction Depth",
+                )
+                density_input = gr.Dropdown(
+                    choices=["low", "medium", "high"],
+                    value="medium",
+                    label="Embedded Command Density",
+                )
+                duration_input = gr.Number(
+                    value=10,
+                    label="Target Duration (min)",
+                    precision=0,
+                    minimum=3,
+                    maximum=60,
                 )
                 aff_count_input = gr.Number(
                     value=20,
                     label="Affirmation Count",
                     precision=0,
                 )
-                model_dropdown = gr.Dropdown(
-                    choices=[m[0] for m in AVAILABLE_MODELS],
-                    value=AVAILABLE_MODELS[0][0],
-                    label="Model (auto-fallback enabled)",
+            with gr.Row():
+                focus_input = gr.Textbox(
+                    label="Theme / Focus (optional)",
+                    placeholder="e.g., public speaking, exam preparation, morning energy",
+                    lines=1,
+                    scale=1,
+                )
+            with gr.Row():
+                custom_instructions_input = gr.Textbox(
+                    label="Custom Instructions (optional)",
+                    placeholder="e.g., Include a body scan, use ocean metaphors, mention my safe place...",
+                    lines=2,
+                    scale=1,
                 )
             with gr.Row():
                 gen_script_btn = gr.Button("Generate Script", variant="secondary")
@@ -305,7 +397,11 @@ def create_ui() -> gr.Blocks:
         
         gen_script_btn.click(
             fn=ai_generate_script,
-            inputs=[goal_input, style_input],
+            inputs=[
+                goal_input, style_input, duration_input,
+                depth_input, density_input, focus_input,
+                custom_instructions_input, model_dropdown,
+            ],
             outputs=[script_input],
         )
         gen_aff_btn.click(
@@ -315,7 +411,11 @@ def create_ui() -> gr.Blocks:
         )
         gen_both_btn.click(
             fn=ai_generate_both,
-            inputs=[goal_input, style_input, aff_count_input],
+            inputs=[
+                goal_input, style_input, aff_count_input,
+                duration_input, depth_input, density_input,
+                focus_input, custom_instructions_input, model_dropdown,
+            ],
             outputs=[script_input, affirmations_input],
         )
         generate_btn.click(

@@ -95,6 +95,74 @@ class TestGenerateScript:
         assert any("permissive" in msg["content"] for msg in captured_messages)
 
     @patch("hypnogen.core.llm._call_gemini_api")
+    def test_generate_script_includes_depth_in_prompt(self, mock_gemini):
+        mock_gemini.return_value = "Script content"
+        captured_messages = []
+
+        def capture_call(messages, *args, **kwargs):
+            captured_messages.extend(messages)
+            return "Script"
+
+        mock_gemini.side_effect = capture_call
+
+        with patch.dict(os.environ, {"GEMINI_KEY": "test"}):
+            generate_script("relax", 5, "ericksonian", depth="deep")
+
+        prompt_text = " ".join(msg["content"] for msg in captured_messages)
+        assert "deeply immersive" in prompt_text or "profound trance" in prompt_text
+
+    @patch("hypnogen.core.llm._call_gemini_api")
+    def test_generate_script_includes_density_in_prompt(self, mock_gemini):
+        mock_gemini.return_value = "Script content"
+        captured_messages = []
+
+        def capture_call(messages, *args, **kwargs):
+            captured_messages.extend(messages)
+            return "Script"
+
+        mock_gemini.side_effect = capture_call
+
+        with patch.dict(os.environ, {"GEMINI_KEY": "test"}):
+            generate_script("relax", 5, "ericksonian", command_density="high")
+
+        prompt_text = " ".join(msg["content"] for msg in captured_messages)
+        assert "frequently" in prompt_text
+
+    @patch("hypnogen.core.llm._call_gemini_api")
+    def test_generate_script_includes_focus_theme(self, mock_gemini):
+        mock_gemini.return_value = "Script content"
+        captured_messages = []
+
+        def capture_call(messages, *args, **kwargs):
+            captured_messages.extend(messages)
+            return "Script"
+
+        mock_gemini.side_effect = capture_call
+
+        with patch.dict(os.environ, {"GEMINI_KEY": "test"}):
+            generate_script("relax", 5, focus_theme="ocean meditation")
+
+        prompt_text = " ".join(msg["content"] for msg in captured_messages)
+        assert "ocean meditation" in prompt_text
+
+    @patch("hypnogen.core.llm._call_gemini_api")
+    def test_generate_script_includes_custom_instructions(self, mock_gemini):
+        mock_gemini.return_value = "Script content"
+        captured_messages = []
+
+        def capture_call(messages, *args, **kwargs):
+            captured_messages.extend(messages)
+            return "Script"
+
+        mock_gemini.side_effect = capture_call
+
+        with patch.dict(os.environ, {"GEMINI_KEY": "test"}):
+            generate_script("relax", 5, custom_instructions="Include a body scan")
+
+        prompt_text = " ".join(msg["content"] for msg in captured_messages)
+        assert "body scan" in prompt_text
+
+    @patch("hypnogen.core.llm._call_gemini_api")
     @patch("hypnogen.core.llm._call_nvidia_api")
     def test_generate_script_fallback_to_kimi(self, mock_nvidia, mock_gemini):
         """generate_script falls back to Kimi if Gemini fails."""
