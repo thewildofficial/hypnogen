@@ -58,15 +58,6 @@ class TestUIComponents:
         voice_found = any("voice" in (d.label or "").lower() for d in dropdowns)
         assert voice_found, "Voice dropdown not found"
 
-    def test_ui_has_length_slider(self):
-        """UI has a Slider for session length."""
-        from hypnogen.web import create_ui
-
-        app = create_ui()
-        sliders = [b for b in app.blocks.values() if isinstance(b, gr.Slider)]
-        length_found = any("length" in (s.label or "").lower() for s in sliders)
-        assert length_found, "Length slider not found"
-
     def test_ui_has_seed_input(self):
         """UI has a Number input for seed."""
         from hypnogen.web import create_ui
@@ -120,16 +111,15 @@ class TestGenerateAudio:
         script = "Welcome to relaxation."
         affirmations = "I am calm\nI am peaceful"
         voice = "af_heart"
-        length_sec = 10
         seed = 42
 
-        result = generate_audio(script, affirmations, voice, length_sec, seed)
+        result = generate_audio(script, affirmations, voice, seed)
 
-        # Should return tuple: (audio_tuple, filepath)
+        # Should return tuple: (audio_tuple, filepath, info)
         assert isinstance(result, tuple)
-        assert len(result) == 2
+        assert len(result) == 3
 
-        audio_tuple, filepath = result
+        audio_tuple, filepath, info = result
         # audio_tuple should be (sample_rate, audio_array)
         assert isinstance(audio_tuple, tuple)
         assert len(audio_tuple) == 2
@@ -148,10 +138,9 @@ class TestGenerateAudio:
         script = "Welcome."
         affirmations = "I am calm"
         voice = "af_heart"
-        length_sec = 5
         seed = 42
 
-        _, filepath = generate_audio(script, affirmations, voice, length_sec, seed)
+        _, filepath, _ = generate_audio(script, affirmations, voice, seed)
 
         assert Path(filepath).exists(), f"Temp file not created: {filepath}"
 
@@ -162,11 +151,9 @@ class TestGenerateAudio:
         script = "Welcome."
         affirmations = "I am calm"
         voice = "af_heart"
-        length_sec = 5
-        seed = None  # No seed
+        seed = None
 
-        # Should not raise
-        result = generate_audio(script, affirmations, voice, length_sec, seed)
+        result = generate_audio(script, affirmations, voice, seed)
         assert result is not None
 
     def test_generate_audio_validates_affirmations(self, mock_synthesize):
@@ -174,13 +161,11 @@ class TestGenerateAudio:
         from hypnogen.web import generate_audio
 
         script = "Welcome."
-        affirmations = "I am calm\nI was happy\nI am peaceful"  # "was" is past tense
+        affirmations = "I am calm\nI was happy\nI am peaceful"
         voice = "af_heart"
-        length_sec = 5
         seed = 42
 
-        # Should not raise, just skip invalid
-        result = generate_audio(script, affirmations, voice, length_sec, seed)
+        result = generate_audio(script, affirmations, voice, seed)
         assert result is not None
 
     def test_generate_audio_with_embedded_commands(self, mock_synthesize):
@@ -190,10 +175,9 @@ class TestGenerateAudio:
         script = 'You can <cmd pitch="-2">relax deeply</cmd> now.'
         affirmations = "I am calm"
         voice = "af_heart"
-        length_sec = 5
         seed = 42
 
-        result = generate_audio(script, affirmations, voice, length_sec, seed)
+        result = generate_audio(script, affirmations, voice, seed)
         assert result is not None
 
 
@@ -287,7 +271,7 @@ class TestWebLLMIntegration:
         from hypnogen.web import ai_generate_script
 
         mock_llm.return_value = "And now... <cmd>relax deeply</cmd>..."
-        result = ai_generate_script("build confidence", 600, "ericksonian")
+        result = ai_generate_script("build confidence", "ericksonian")
         assert isinstance(result, str)
         assert "relax" in result
         mock_llm.assert_called_once()
@@ -307,7 +291,7 @@ class TestWebLLMIntegration:
         from hypnogen.web import ai_generate_script
 
         with pytest.raises(gr.Error):
-            ai_generate_script("", 600, "ericksonian")
+            ai_generate_script("", "ericksonian")
 
     def test_ai_generate_affirmations_empty_goal_raises(self):
         from hypnogen.web import ai_generate_affirmations
@@ -322,7 +306,7 @@ class TestWebLLMIntegration:
 
         mock_llm.side_effect = LLMError("API timeout")
         with pytest.raises(gr.Error):
-            ai_generate_script("relax", 600, "ericksonian")
+            ai_generate_script("relax", "ericksonian")
 
     def test_ui_has_generate_both_button(self):
         from hypnogen.web import create_ui
@@ -340,7 +324,7 @@ class TestWebLLMIntegration:
         mock_script.return_value = "Test script content"
         mock_aff.return_value = ["I am calm", "I am focused"]
 
-        script, aff_text = ai_generate_both("relax", 600, "ericksonian", 20)
+        script, aff_text = ai_generate_both("relax", "ericksonian", 20)
 
         mock_script.assert_called_once_with(
             goal="relax", duration_minutes=10, style="ericksonian"
@@ -353,7 +337,7 @@ class TestWebLLMIntegration:
         from hypnogen.web import ai_generate_both
 
         with pytest.raises(gr.Error):
-            ai_generate_both("", 600, "ericksonian", 20)
+            ai_generate_both("", "ericksonian", 20)
 
     @patch("hypnogen.web.llm_generate_script")
     def test_ai_generate_both_llm_error_raises_gr_error(self, mock_llm):
@@ -362,4 +346,4 @@ class TestWebLLMIntegration:
 
         mock_llm.side_effect = LLMError("API timeout")
         with pytest.raises(gr.Error):
-            ai_generate_both("relax", 600, "ericksonian", 20)
+            ai_generate_both("relax", "ericksonian", 20)

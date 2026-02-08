@@ -121,30 +121,29 @@ def generate_boundary_event(
         return np.zeros((num_samples, 2))
 
     elif event_type == "snap":
-        # Short transient burst: 10-20ms noise with fast exponential decay
-        burst_duration_ms = rng.uniform(10, 20)
-        burst_samples = int(sr * burst_duration_ms / 1000.0)
+        total_samples = int(sr * 0.08)
+        t = np.arange(total_samples) / sr
 
-        # Decay tail: 200ms
-        tail_samples = int(sr * 0.2)
-        total_samples = burst_samples + tail_samples
+        click_duration = int(sr * 0.003)
+        click_t = np.arange(click_duration) / sr
+        click = np.sin(2 * np.pi * 4000 * click_t) * np.exp(-click_t / 0.001)
 
-        # Generate noise burst
-        burst = rng.standard_normal(burst_samples)
+        noise_samples = int(sr * 0.015)
+        noise = rng.standard_normal(noise_samples)
+        noise_hp = np.diff(noise, prepend=noise[0])
+        noise_hp = noise_hp / np.max(np.abs(noise_hp)) * 0.5
 
-        # Create exponential decay envelope
-        decay = np.exp(-np.linspace(0, 5, total_samples))
+        combined = np.zeros(total_samples)
+        combined[:len(click)] += click
+        combined[len(click):len(click) + len(noise_hp)] += noise_hp
 
-        # Apply decay to burst + silence
-        signal = np.concatenate([burst, np.zeros(tail_samples)])
-        signal = signal * decay
+        decay = np.exp(-t / 0.015)
+        signal = combined * decay
 
-        # Normalize
         max_val = np.max(np.abs(signal))
         if max_val > 0:
-            signal = signal / max_val
+            signal = signal / max_val * 0.7
 
-        # Convert to stereo
         return np.column_stack([signal, signal])
 
     elif event_type == "stereo_collapse":

@@ -8,21 +8,84 @@ from hypnogen.core.swarm import validate_affirmation
 load_dotenv()
 
 NVIDIA_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-MODEL = "moonshotai/kimi-k2.5"
+KIMI_MODEL = "moonshotai/kimi-k2.5"
+
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
+GEMINI_PRO_MODEL = "gemini-2.5-pro-preview-05-06"
+GEMINI_FLASH_MODEL = "gemini-2.5-flash-preview-04-17"
+
+AVAILABLE_MODELS = [
+    ("Gemini Pro", "gemini-pro"),
+    ("Gemini Flash", "gemini-flash"),
+    ("Kimi K2.5 (NVIDIA)", "kimi"),
+]
 
 
 class LLMError(Exception):
     pass
 
 
-def get_api_key() -> str:
-    key = os.getenv("NVIDIA_API_KEY")
-    if not key:
-        raise ValueError("NVIDIA_API_KEY environment variable not set")
-    return key
+def get_api_key(provider: str = "nvidia") -> str:
+    if provider == "gemini":
+        key = os.getenv("GEMINI_KEY")
+        if not key:
+            raise ValueError("GEMINI_KEY environment variable not set")
+        return key
+    else:
+        key = os.getenv("NVIDIA_API_KEY")
+        if not key:
+            raise ValueError("NVIDIA_API_KEY environment variable not set")
+        return key
 
 
-def _call_api(
+def _call_gemini_api(
+    messages: list[dict],
+    api_key: str,
+    model: str = GEMINI_PRO_MODEL,
+    max_tokens: int = 16384,
+    temperature: float = 1.0,
+) -> str:
+    url = f"{GEMINI_API_URL}/{model}:generateContent?key={api_key}"
+
+    gemini_contents = []
+    for msg in messages:
+        role = "user" if msg["role"] == "user" else "model"
+        gemini_contents.append({
+            "role": role,
+            "parts": [{"text": msg["content"]}]
+        })
+
+    payload = {
+        "contents": gemini_contents,
+        "generationConfig": {
+            "maxOutputTokens": max_tokens,
+            "temperature": temperature,
+            "topP": 1.0,
+        },
+    }
+
+    try:
+        response = httpx.post(
+            url,
+            json=payload,
+            timeout=300.0,
+        )
+        response.raise_for_status()
+    except Exception as e:
+        raise LLMError(f"Gemini HTTP error: {e}") from e
+
+    data = response.json()
+
+    if "error" in data:
+        raise LLMError(f"Gemini API error: {data['error']}")
+
+    try:
+        return data["candidates"][0]["content"]["parts"][0]["text"]
+    except (KeyError, IndexError) as e:
+        raise LLMError(f"Unexpected Gemini response format: {e}") from e
+
+
+def _call_nvidia_api(
     messages: list[dict],
     api_key: str,
     stream: bool = False,
@@ -36,7 +99,7 @@ def _call_api(
     }
 
     payload = {
-        "model": MODEL,
+        "model": KIMI_MODEL,
         "messages": messages,
         "max_tokens": max_tokens,
         "temperature": temperature,
@@ -54,25 +117,48 @@ def _call_api(
         )
         response.raise_for_status()
     except Exception as e:
-        raise LLMError(f"HTTP error: {e}") from e
+        raise LLMError(f"NVIDIA HTTP error: {e}") from e
 
     data = response.json()
 
     if "error" in data:
-        raise LLMError(f"API error: {data['error']}")
+        raise LLMError(f"NVIDIA API error: {data['error']}")
 
     return data["choices"][0]["message"]["content"]
+
+
+def _call_api_with_fallback(messages: list[dict]) -> str:
+    errors = []
+
+    # Try Gemini Pro first
+    try:
+        api_key = get_api_key("gemini")
+        return _call_gemini_api(messages, api_key, model=GEMINI_PRO_MODEL)
+    except Exception as e:
+        errors.append(f"Gemini Pro: {e}")
+
+    # Try Gemini Flash as second option
+    try:
+        api_key = get_api_key("gemini")
+        return _call_gemini_api(messages, api_key, model=GEMINI_FLASH_MODEL)
+    except Exception as e:
+        errors.append(f"Gemini Flash: {e}")
+
+    # Fall back to Kimi
+    try:
+        api_key = get_api_key("nvidia")
+        return _call_nvidia_api(messages, api_key)
+    except Exception as e:
+        errors.append(f"Kimi: {e}")
+
+    raise LLMError(f"All providers failed: {'; '.join(errors)}")
 
 
 def generate_script(
     goal: str,
     duration_minutes: int = 10,
     style: str = "ericksonian",
-    api_key: str | None = None,
 ) -> str:
-    if api_key is None:
-        api_key = get_api_key()
-
     word_count = duration_minutes * 150
 
     prompt = f"""You are an expert hypnotherapist creating an Ericksonian hypnosis script.
@@ -92,17 +178,13 @@ Generate a hypnotic induction script with these requirements:
 Return ONLY the script text, no explanations or metadata."""
 
     messages = [{"role": "user", "content": prompt}]
-    return _call_api(messages, api_key)
+    return _call_api_with_fallback(messages)
 
 
 def generate_affirmations(
     goal: str,
     count: int = 20,
-    api_key: str | None = None,
 ) -> list[str]:
-    if api_key is None:
-        api_key = get_api_key()
-
     prompt = f"""Generate {count} powerful affirmations for this goal: {goal}
 
 Rules for each affirmation:
@@ -115,7 +197,7 @@ Rules for each affirmation:
 Return one affirmation per line, nothing else."""
 
     messages = [{"role": "user", "content": prompt}]
-    response = _call_api(messages, api_key)
+    response = _call_api_with_fallback(messages)
 
     lines = response.strip().split("\n")
     affirmations = []

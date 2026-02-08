@@ -118,13 +118,13 @@ def _render_swarm(
     return generate_swarm(affirmation_audios, duration_sec, sr=sr, rng=rng)
 
 
-def ai_generate_script(goal: str, length_sec: int, style: str) -> str:
+def ai_generate_script(goal: str, style: str) -> str:
     if not goal or not goal.strip():
         raise gr.Error("Please enter a goal for script generation")
     try:
         script = llm_generate_script(
             goal=goal.strip(),
-            duration_minutes=max(1, length_sec // 60),
+            duration_minutes=10,
             style=style or "ericksonian",
         )
         return script
@@ -145,14 +145,13 @@ def ai_generate_affirmations(goal: str, count: int = 20) -> str:
         raise gr.Error(f"LLM affirmation generation failed: {e}")
 
 
-def ai_generate_both(goal: str, length_sec: int, style: str, count: int) -> tuple[str, str]:
-    """Generate both script and affirmations in one call."""
+def ai_generate_both(goal: str, style: str, count: int) -> tuple[str, str]:
     if not goal or not goal.strip():
         raise gr.Error("Please enter a goal for generation")
     try:
         script = llm_generate_script(
             goal=goal.strip(),
-            duration_minutes=max(1, length_sec // 60),
+            duration_minutes=10,
             style=style or "ericksonian",
         )
         affirmations = llm_generate_affirmations(
@@ -168,13 +167,14 @@ def generate_audio(
     script_text: str,
     affirmations_text: str,
     voice: str,
-    length_sec: int,
     seed: int | None,
-) -> tuple[tuple[int, np.ndarray], str]:
+) -> tuple[tuple[int, np.ndarray], str, str]:
     """Generate audio from UI inputs.
     
+    Duration is auto-calculated from the script audio length.
+    
     Returns:
-        ((sample_rate, audio_array), filepath) for Gradio audio component and download.
+        ((sample_rate, audio_array), filepath, info_text) for Gradio audio component, download, and status.
     """
     sr = OUTPUT_SAMPLE_RATE
     
@@ -195,6 +195,13 @@ def generate_audio(
         valid_affirmations = ["I am calm"]
     
     shepherd_audio = _render_shepherd(segments, voice, sr)
+    length_sec = shepherd_audio.shape[0] // sr
+    
+    if length_sec < 60:
+        min_samples = 60 * sr
+        shepherd_audio = _pad_or_trim(shepherd_audio, min_samples)
+        length_sec = 60
+    
     swarm_audio = _render_swarm(valid_affirmations, length_sec, sr, voice, rng)
     bed_audio = generate_bed(duration_sec=length_sec, sr=sr, rng=rng)
     
@@ -220,7 +227,9 @@ def generate_audio(
     
     audio_mono = np.mean(mixed, axis=1) if mixed.ndim == 2 else mixed
     
-    return (sr, audio_mono), temp_path
+    info_text = f"Generated {length_sec}s session from script"
+    
+    return (sr, audio_mono), temp_path, info_text
 
 
 def create_ui() -> gr.Blocks:
@@ -272,17 +281,15 @@ def create_ui() -> gr.Blocks:
                     value="af_heart",
                     label="Voice",
                 )
-                length_slider = gr.Slider(
-                    minimum=60,
-                    maximum=1800,
-                    step=60,
-                    value=600,
-                    label="Length (seconds)",
-                )
                 seed_number = gr.Number(
                     value=None,
                     label="Random Seed (optional)",
                     precision=0,
+                )
+                duration_info = gr.Textbox(
+                    label="Session Info",
+                    value="Duration auto-calculated from script",
+                    interactive=False,
                 )
                 generate_btn = gr.Button("Generate Audio", variant="primary")
         
@@ -292,7 +299,7 @@ def create_ui() -> gr.Blocks:
         
         gen_script_btn.click(
             fn=ai_generate_script,
-            inputs=[goal_input, length_slider, style_input],
+            inputs=[goal_input, style_input],
             outputs=[script_input],
         )
         gen_aff_btn.click(
@@ -302,13 +309,13 @@ def create_ui() -> gr.Blocks:
         )
         gen_both_btn.click(
             fn=ai_generate_both,
-            inputs=[goal_input, length_slider, style_input, aff_count_input],
+            inputs=[goal_input, style_input, aff_count_input],
             outputs=[script_input, affirmations_input],
         )
         generate_btn.click(
             fn=generate_audio,
-            inputs=[script_input, affirmations_input, voice_dropdown, length_slider, seed_number],
-            outputs=[audio_output, download_file],
+            inputs=[script_input, affirmations_input, voice_dropdown, seed_number],
+            outputs=[audio_output, download_file, duration_info],
         )
     
     return app
