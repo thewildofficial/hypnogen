@@ -32,6 +32,7 @@ from hypnogen.core.swarm import (
 )
 from hypnogen.core.tts import list_voices, synthesize
 from hypnogen.core.llm import (
+    AVAILABLE_MODELS,
     LLMError,
     generate_affirmations,
     generate_script,
@@ -69,4 +70,5 @@ __all__ = [
     "generate_affirmations",
     "generate_script",
     "get_api_key",
+    "AVAILABLE_MODELS",
 ]

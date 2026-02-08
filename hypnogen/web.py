@@ -9,6 +9,7 @@ import librosa
 import numpy as np
 
 from hypnogen.core import (
+    AVAILABLE_MODELS,
     LLMError,
     generate_affirmations as llm_generate_affirmations,
     generate_script as llm_generate_script,
@@ -254,6 +255,11 @@ def create_ui() -> gr.Blocks:
                     value=20,
                     label="Affirmation Count",
                     precision=0,
+                )
+                model_dropdown = gr.Dropdown(
+                    choices=[m[0] for m in AVAILABLE_MODELS],
+                    value=AVAILABLE_MODELS[0][0],
+                    label="Model (auto-fallback enabled)",
                 )
             with gr.Row():
                 gen_script_btn = gr.Button("Generate Script", variant="secondary")

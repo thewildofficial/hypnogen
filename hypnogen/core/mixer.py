@@ -206,52 +206,23 @@ def _insert_boundary_events(
     event_types: list[str],
     rng: np.random.Generator,
 ) -> np.ndarray:
-    """Insert epoch boundary events at transition points.
-
-    Epoch boundaries are at positions 0.2, 0.5, 0.85 of total duration.
-    Events are inserted by replacing audio at those positions.
-
-    Args:
-        audio: Input stereo audio (N, 2)
-        sr: Sample rate
-        event_types: List of 3 event type strings
-        rng: Random number generator
-
-    Returns:
-        Audio with boundary events inserted
-    """
     if len(event_types) != 3:
         return audio
 
     total_samples = audio.shape[0]
+    result = audio.copy()
 
-    # Boundary positions (normalized) - using EPOCH_BOUNDARIES[1:4]
-    # which are 0.2, 0.5, 0.85
     boundary_positions = [EPOCH_BOUNDARIES[1], EPOCH_BOUNDARIES[2], EPOCH_BOUNDARIES[3]]
-
-    # Compute sample positions
     boundary_samples = [int(pos * total_samples) for pos in boundary_positions]
 
-    # Generate and insert each event
-    result_parts = []
-    prev_end = 0
-
-    for i, (sample_pos, event_type) in enumerate(zip(boundary_samples, event_types)):
-        # Generate the boundary event
+    for sample_pos, event_type in zip(boundary_samples, event_types):
         event = generate_boundary_event(event_type, sr, rng)
+        event_samples = event.shape[0]
 
-        # Add audio from previous end to current boundary
-        result_parts.append(audio[prev_end:sample_pos])
+        end_pos = min(sample_pos + event_samples, total_samples)
+        actual_samples = end_pos - sample_pos
 
-        # Add the boundary event
-        result_parts.append(event)
+        if actual_samples > 0:
+            result[sample_pos:end_pos] += event[:actual_samples] * 0.3
 
-        # Update previous end position (skip event duration in original audio)
-        prev_end = min(sample_pos + event.shape[0], total_samples)
-
-    # Add remaining audio after last event
-    if prev_end < total_samples:
-        result_parts.append(audio[prev_end:])
-
-    # Concatenate all parts
-    return np.concatenate(result_parts, axis=0)
+    return result
