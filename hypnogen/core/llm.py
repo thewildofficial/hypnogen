@@ -50,7 +50,7 @@ def _call_api(
             NVIDIA_API_URL,
             headers=headers,
             json=payload,
-            timeout=120.0,
+            timeout=300.0,
         )
         response.raise_for_status()
     except Exception as e:

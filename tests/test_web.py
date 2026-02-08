@@ -323,3 +323,43 @@ class TestWebLLMIntegration:
         mock_llm.side_effect = LLMError("API timeout")
         with pytest.raises(gr.Error):
             ai_generate_script("relax", 600, "ericksonian")
+
+    def test_ui_has_generate_both_button(self):
+        from hypnogen.web import create_ui
+
+        app = create_ui()
+        buttons = [c for c in app.blocks.values() if isinstance(c, gr.Button)]
+        button_texts = [b.value for b in buttons]
+        assert "Generate Both" in button_texts
+
+    @patch("hypnogen.web.llm_generate_script")
+    @patch("hypnogen.web.llm_generate_affirmations")
+    def test_ai_generate_both_calls_both_llm_functions(self, mock_aff, mock_script):
+        from hypnogen.web import ai_generate_both
+
+        mock_script.return_value = "Test script content"
+        mock_aff.return_value = ["I am calm", "I am focused"]
+
+        script, aff_text = ai_generate_both("relax", 600, "ericksonian", 20)
+
+        mock_script.assert_called_once_with(
+            goal="relax", duration_minutes=10, style="ericksonian"
+        )
+        mock_aff.assert_called_once_with(goal="relax", count=20)
+        assert script == "Test script content"
+        assert aff_text == "I am calm\nI am focused"
+
+    def test_ai_generate_both_empty_goal_raises(self):
+        from hypnogen.web import ai_generate_both
+
+        with pytest.raises(gr.Error):
+            ai_generate_both("", 600, "ericksonian", 20)
+
+    @patch("hypnogen.web.llm_generate_script")
+    def test_ai_generate_both_llm_error_raises_gr_error(self, mock_llm):
+        from hypnogen.core.llm import LLMError
+        from hypnogen.web import ai_generate_both
+
+        mock_llm.side_effect = LLMError("API timeout")
+        with pytest.raises(gr.Error):
+            ai_generate_both("relax", 600, "ericksonian", 20)

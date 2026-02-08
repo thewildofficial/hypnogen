@@ -145,6 +145,25 @@ def ai_generate_affirmations(goal: str, count: int = 20) -> str:
         raise gr.Error(f"LLM affirmation generation failed: {e}")
 
 
+def ai_generate_both(goal: str, length_sec: int, style: str, count: int) -> tuple[str, str]:
+    """Generate both script and affirmations in one call."""
+    if not goal or not goal.strip():
+        raise gr.Error("Please enter a goal for generation")
+    try:
+        script = llm_generate_script(
+            goal=goal.strip(),
+            duration_minutes=max(1, length_sec // 60),
+            style=style or "ericksonian",
+        )
+        affirmations = llm_generate_affirmations(
+            goal=goal.strip(),
+            count=int(count),
+        )
+        return script, "\n".join(affirmations)
+    except LLMError as e:
+        raise gr.Error(f"LLM generation failed: {e}")
+
+
 def generate_audio(
     script_text: str,
     affirmations_text: str,
@@ -230,6 +249,7 @@ def create_ui() -> gr.Blocks:
             with gr.Row():
                 gen_script_btn = gr.Button("Generate Script", variant="secondary")
                 gen_aff_btn = gr.Button("Generate Affirmations", variant="secondary")
+                gen_both_btn = gr.Button("Generate Both", variant="primary")
 
         with gr.Row():
             with gr.Column():
@@ -279,6 +299,11 @@ def create_ui() -> gr.Blocks:
             fn=ai_generate_affirmations,
             inputs=[goal_input, aff_count_input],
             outputs=[affirmations_input],
+        )
+        gen_both_btn.click(
+            fn=ai_generate_both,
+            inputs=[goal_input, length_slider, style_input, aff_count_input],
+            outputs=[script_input, affirmations_input],
         )
         generate_btn.click(
             fn=generate_audio,
