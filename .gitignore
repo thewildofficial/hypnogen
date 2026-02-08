@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# uv
+uv.lock
+
+# Environment
+.env
+
+# IDE / Agent configs
+.vscode/
+.idea/
+.agent/
+.agents/
+.claude/
+.cursor/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Orchestration
+.sisyphus/
