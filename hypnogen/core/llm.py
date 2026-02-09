@@ -11,8 +11,8 @@ NVIDIA_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 KIMI_MODEL = "moonshotai/kimi-k2.5"
 
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
-GEMINI_PRO_MODEL = "gemini-2.5-pro-preview-05-06"
-GEMINI_FLASH_MODEL = "gemini-2.5-flash-preview-04-17"
+GEMINI_PRO_MODEL = "gemini-3-pro-preview"
+GEMINI_FLASH_MODEL = "gemini-3-flash-preview"
 
 AVAILABLE_MODELS = [
     ("Gemini Pro", "gemini-pro"),
@@ -127,30 +127,45 @@ def _call_nvidia_api(
     return data["choices"][0]["message"]["content"]
 
 
-def _call_api_with_fallback(messages: list[dict]) -> str:
+def _call_api_with_fallback(messages: list[dict], preferred_model: str | None = None) -> str:
+    """Call LLM API with fallback chain.
+    
+    Args:
+        messages: List of message dicts for the API
+        preferred_model: Which model to try first ("gemini-pro", "gemini-flash", "kimi")
+                        If None, defaults to Pro → Flash → Kimi order
+    """
     errors = []
-
-    # Try Gemini Pro first
-    try:
-        api_key = get_api_key("gemini")
-        return _call_gemini_api(messages, api_key, model=GEMINI_PRO_MODEL)
-    except Exception as e:
-        errors.append(f"Gemini Pro: {e}")
-
-    # Try Gemini Flash as second option
-    try:
-        api_key = get_api_key("gemini")
-        return _call_gemini_api(messages, api_key, model=GEMINI_FLASH_MODEL)
-    except Exception as e:
-        errors.append(f"Gemini Flash: {e}")
-
-    # Fall back to Kimi
-    try:
-        api_key = get_api_key("nvidia")
-        return _call_nvidia_api(messages, api_key)
-    except Exception as e:
-        errors.append(f"Kimi: {e}")
-
+    api_key_gemini = get_api_key("gemini")
+    api_key_nvidia = get_api_key("nvidia")
+    
+    # Build attempt order based on preference
+    if preferred_model == "gemini-flash":
+        attempt_order = [
+            ("Gemini Flash", lambda: _call_gemini_api(messages, api_key_gemini, model=GEMINI_FLASH_MODEL)),
+            ("Gemini Pro", lambda: _call_gemini_api(messages, api_key_gemini, model=GEMINI_PRO_MODEL)),
+            ("Kimi", lambda: _call_nvidia_api(messages, api_key_nvidia)),
+        ]
+    elif preferred_model == "kimi":
+        attempt_order = [
+            ("Kimi", lambda: _call_nvidia_api(messages, api_key_nvidia)),
+            ("Gemini Pro", lambda: _call_gemini_api(messages, api_key_gemini, model=GEMINI_PRO_MODEL)),
+            ("Gemini Flash", lambda: _call_gemini_api(messages, api_key_gemini, model=GEMINI_FLASH_MODEL)),
+        ]
+    else:
+        # Default: Pro → Flash → Kimi
+        attempt_order = [
+            ("Gemini Pro", lambda: _call_gemini_api(messages, api_key_gemini, model=GEMINI_PRO_MODEL)),
+            ("Gemini Flash", lambda: _call_gemini_api(messages, api_key_gemini, model=GEMINI_FLASH_MODEL)),
+            ("Kimi", lambda: _call_nvidia_api(messages, api_key_nvidia)),
+        ]
+    
+    for name, call_fn in attempt_order:
+        try:
+            return call_fn()
+        except Exception as e:
+            errors.append(f"{name}: {e}")
+    
     raise LLMError(f"All providers failed: {'; '.join(errors)}")
 
 
@@ -162,6 +177,7 @@ def generate_script(
     command_density: str = "medium",
     focus_theme: str = "",
     custom_instructions: str = "",
+    model: str = "gemini-pro",
 ) -> str:
     word_count = duration_minutes * 150
 
@@ -299,7 +315,7 @@ FORMATTING RULES:
 Return ONLY the script text. No explanations, titles, or metadata."""
 
     messages = [{"role": "user", "content": prompt}]
-    return _call_api_with_fallback(messages)
+    return _call_api_with_fallback(messages, preferred_model=model)
 
 
 def generate_affirmations(

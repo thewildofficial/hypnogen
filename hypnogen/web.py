@@ -167,6 +167,13 @@ def _render_swarm(
     return generate_swarm(affirmation_audios, duration_sec, sr=sr, rng=rng)
 
 
+def _map_model_display_to_id(display_name: str) -> str:
+    for display, model_id in AVAILABLE_MODELS:
+        if display == display_name:
+            return model_id
+    return "gemini-pro"
+
+
 def ai_generate_script(
     goal: str,
     style: str,
@@ -180,6 +187,7 @@ def ai_generate_script(
     if not goal or not goal.strip():
         raise gr.Error("Please enter a goal for script generation")
     try:
+        model_id = _map_model_display_to_id(model)
         script = llm_generate_script(
             goal=goal.strip(),
             duration_minutes=int(duration_minutes) if duration_minutes else 10,
@@ -188,6 +196,7 @@ def ai_generate_script(
             command_density=command_density or "medium",
             focus_theme=focus_theme.strip() if focus_theme else "",
             custom_instructions=custom_instructions.strip() if custom_instructions else "",
+            model=model_id,
         )
         return script
     except LLMError as e:
