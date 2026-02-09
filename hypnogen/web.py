@@ -3,6 +3,7 @@
 import argparse
 import os
 import tempfile
+import time
 
 import gradio as gr
 import librosa
@@ -95,6 +96,7 @@ def _render_shepherd(
             if progress and total_tts > 0:
                 frac = progress_offset + (tts_done / total_tts) * progress_scale
                 progress(frac, desc=f"Shepherd TTS: {tts_done}/{total_tts} segments")
+                time.sleep(0)
 
         elif seg_type == "command":
             audio, tts_sr = synthesize(segment["text"], voice=voice, speed=0.9)
@@ -110,6 +112,7 @@ def _render_shepherd(
             if progress and total_tts > 0:
                 frac = progress_offset + (tts_done / total_tts) * progress_scale
                 progress(frac, desc=f"Shepherd TTS: {tts_done}/{total_tts} segments")
+                time.sleep(0)
 
         elif seg_type == "pause":
             duration_ms = segment["duration_ms"]
@@ -137,6 +140,7 @@ def _render_shepherd(
             if progress and total_tts > 0:
                 frac = progress_offset + (tts_done / total_tts) * progress_scale
                 progress(frac, desc=f"Shepherd TTS: {tts_done}/{total_tts} segments")
+                time.sleep(0)
 
     if not audio_parts:
         return np.zeros((1, 2), dtype=np.float32)
@@ -163,6 +167,7 @@ def _render_swarm(
         if progress and total > 0:
             frac = progress_offset + ((i + 1) / total) * progress_scale
             progress(frac, desc=f"Swarm TTS: {i + 1}/{total} affirmations")
+            time.sleep(0)
 
     return generate_swarm(affirmation_audios, duration_sec, sr=sr, rng=rng)
 
@@ -269,6 +274,7 @@ def generate_audio(
         swarm_voice = chosen[1]
     
     progress(0, desc="Parsing script...")
+    time.sleep(0)
     segments = parse_script(script_text)
     valid, msg = validate_marking_density(segments)
     
@@ -299,6 +305,7 @@ def generate_audio(
     )
 
     progress(0.9, desc="Generating binaural bed...")
+    time.sleep(0)
     bed_audio = generate_bed(duration_sec=length_sec, sr=sr, rng=rng)
     
     target_samples = length_sec * sr
@@ -307,6 +314,7 @@ def generate_audio(
     bed_audio = _pad_or_trim(bed_audio, target_samples)
     
     progress(0.95, desc="Mixing layers & applying epochs...")
+    time.sleep(0)
     boundary_events = select_boundary_events(rng)
     mixed = mix_layers(
         shepherd=shepherd_audio,
@@ -319,6 +327,7 @@ def generate_audio(
     )
     
     progress(0.98, desc="Exporting WAV...")
+    time.sleep(0)
     temp_dir = tempfile.gettempdir()
     temp_path = os.path.join(temp_dir, f"hypnogen_{seed_val or 'random'}.wav")
     write_wav(temp_path, mixed, sr)
@@ -326,6 +335,7 @@ def generate_audio(
     audio_mono = np.mean(mixed, axis=1) if mixed.ndim == 2 else mixed
     
     progress(1.0, desc="Done!")
+    time.sleep(0)
     info_text = f"Generated {length_sec}s session | Shepherd voice: {shepherd_voice} | Swarm voice: {swarm_voice}"
     
     return (sr, audio_mono), temp_path, info_text
