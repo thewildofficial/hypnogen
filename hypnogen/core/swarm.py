@@ -12,7 +12,14 @@ FORBIDDEN_NEGATIONS = {
     "not", "never", "don't", "won't", "can't", "isn't", "aren't",
     "doesn't", "didn't"
 }
-MAX_WORDS = 7
+WILL_CONTRACTIONS = {"i'll", "you'll", "we'll", "they'll", "he'll", "she'll", "it'll"}
+SOFT_FUTURE_PHRASES = {"each day", "more and more", "increasingly", "day by day"}
+MAX_WORDS = 20
+
+
+def _normalize_apostrophes(text: str) -> str:
+    """Replace curly apostrophes with straight ones for consistent matching."""
+    return text.replace("\u2019", "'").replace("\u2018", "'")
 
 
 def validate_affirmation(text: str) -> tuple[bool, str]:
@@ -21,9 +28,11 @@ def validate_affirmation(text: str) -> tuple[bool, str]:
     
     Rules:
     - Non-empty after stripping whitespace
-    - ≤ 7 words
+    - ≤ 20 words
     - Present tense only (reject past/future/conditional)
+    - No will-contractions (I'll, you'll, etc.)
     - No negations
+    - Soft-future phrases allowed (each day, more and more, etc.)
     
     Args:
         text: Affirmation text to validate
@@ -43,18 +52,24 @@ def validate_affirmation(text: str) -> tuple[bool, str]:
     if len(words) > MAX_WORDS:
         return (False, f"reason: exceeds {MAX_WORDS} words (has {len(words)})")
     
-    # Lowercase for case-insensitive checks
-    lower_text = stripped.lower()
-    lower_words = [w.lower() for w in words]
+    # Normalize apostrophes and lowercase for case-insensitive checks
+    normalized = _normalize_apostrophes(stripped)
+    lower_text = normalized.lower()
+    lower_words = [w.lower() for w in normalized.split()]
     
-    # Check forbidden tense words
+    # Check will-contractions (token-based, not substring)
+    for contraction in WILL_CONTRACTIONS:
+        if contraction in lower_words:
+            return (False, f"reason: will-contraction '{contraction}' not allowed")
+    
+    # Check forbidden tense words (token-based for single words)
     for forbidden in FORBIDDEN_TENSE_WORDS:
         if " " in forbidden:
             # Multi-word phrases like "have been"
             if forbidden in lower_text:
                 return (False, f"reason: forbidden tense '{forbidden}'")
         else:
-            # Single words
+            # Single words — exact token match only
             if forbidden in lower_words:
                 return (False, f"reason: forbidden tense '{forbidden}'")
     

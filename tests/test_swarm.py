@@ -29,6 +29,24 @@ class TestValidateAffirmation:
         assert valid is True
         assert reason == "OK"
 
+    def test_valid_twenty_words(self):
+        """Valid: exactly 20 words (new MAX_WORDS)."""
+        text = "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty"
+        words = text.split()
+        assert len(words) == 20  # Sanity check
+        valid, reason = validate_affirmation(text)
+        assert valid is True
+        assert reason == "OK"
+
+    def test_invalid_twenty_one_words(self):
+        """Invalid: 21 words exceeds new MAX_WORDS of 20."""
+        text = "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone"
+        words = text.split()
+        assert len(words) == 21  # Sanity check
+        valid, reason = validate_affirmation(text)
+        assert valid is False
+        assert "20 words" in reason.lower() or "word" in reason.lower()
+
     def test_invalid_empty(self):
         """Invalid: empty string."""
         valid, reason = validate_affirmation("")
@@ -42,12 +60,13 @@ class TestValidateAffirmation:
         assert "empty" in reason.lower()
 
     def test_invalid_too_many_words(self):
-        """Invalid: more than 7 words."""
-        valid, reason = validate_affirmation(
-            "I am confident and strong and brave and powerful"
-        )
+        """Invalid: more than 20 words."""
+        text = "I am confident and strong and brave and powerful and calm and peaceful and centered and grounded and whole and free now today"
+        words = text.split()
+        assert len(words) > 20  # Sanity check
+        valid, reason = validate_affirmation(text)
         assert valid is False
-        assert "7 words" in reason.lower() or "word" in reason.lower()
+        assert "20 words" in reason.lower() or "word" in reason.lower()
 
     def test_invalid_past_tense_was(self):
         """Invalid: past tense 'was'."""
@@ -163,6 +182,102 @@ class TestValidateAffirmation:
         valid, reason = validate_affirmation("I WAS calm")
         assert valid is False
         assert "tense" in reason.lower() or "was" in reason.lower()
+
+    # --- Will-contraction tests ---
+
+    def test_invalid_contraction_ill(self):
+        """Invalid: will-contraction I'll."""
+        valid, reason = validate_affirmation("I'll succeed every day")
+        assert valid is False
+        assert "contraction" in reason.lower() or "i'll" in reason.lower()
+
+    def test_invalid_contraction_youll(self):
+        """Invalid: will-contraction you'll."""
+        valid, reason = validate_affirmation("You'll be happy")
+        assert valid is False
+        assert "contraction" in reason.lower() or "you'll" in reason.lower()
+
+    def test_invalid_contraction_well(self):
+        """Invalid: will-contraction we'll."""
+        valid, reason = validate_affirmation("We'll grow stronger")
+        assert valid is False
+        assert "contraction" in reason.lower() or "we'll" in reason.lower()
+
+    def test_invalid_contraction_theyll(self):
+        """Invalid: will-contraction they'll."""
+        valid, reason = validate_affirmation("They'll see my strength")
+        assert valid is False
+        assert "contraction" in reason.lower() or "they'll" in reason.lower()
+
+    def test_invalid_contraction_hell(self):
+        """Invalid: will-contraction he'll."""
+        valid, reason = validate_affirmation("He'll support me always")
+        assert valid is False
+        assert "contraction" in reason.lower() or "he'll" in reason.lower()
+
+    def test_invalid_contraction_shell(self):
+        """Invalid: will-contraction she'll."""
+        valid, reason = validate_affirmation("She'll guide me forward")
+        assert valid is False
+        assert "contraction" in reason.lower() or "she'll" in reason.lower()
+
+    def test_invalid_contraction_itll(self):
+        """Invalid: will-contraction it'll."""
+        valid, reason = validate_affirmation("It'll be wonderful")
+        assert valid is False
+        assert "contraction" in reason.lower() or "it'll" in reason.lower()
+
+    def test_invalid_contraction_case_insensitive(self):
+        """Will-contractions should be caught case-insensitively."""
+        valid, reason = validate_affirmation("I'LL succeed every day")
+        assert valid is False
+        assert "contraction" in reason.lower() or "i'll" in reason.lower()
+
+    # --- False-positive protection ---
+
+    def test_valid_willpower_not_flagged(self):
+        """Valid: 'willpower' should NOT be flagged as 'will'."""
+        valid, reason = validate_affirmation("My willpower is strong")
+        assert valid is True
+        assert reason == "OK"
+
+    def test_valid_willing_not_flagged(self):
+        """Valid: 'willing' should NOT be flagged as 'will'."""
+        valid, reason = validate_affirmation("I am willing and ready")
+        assert valid is True
+        assert reason == "OK"
+
+    # --- Soft-future phrases ---
+
+    def test_valid_soft_future_each_day(self):
+        """Valid: 'each day' is a soft-future phrase, not forbidden."""
+        valid, reason = validate_affirmation("I grow stronger each day")
+        assert valid is True
+        assert reason == "OK"
+
+    def test_valid_soft_future_more_and_more(self):
+        """Valid: 'more and more' is a soft-future phrase, not forbidden."""
+        valid, reason = validate_affirmation("I feel more and more confident")
+        assert valid is True
+        assert reason == "OK"
+
+    def test_valid_soft_future_increasingly(self):
+        """Valid: 'increasingly' is a soft-future phrase, not forbidden."""
+        valid, reason = validate_affirmation("I am increasingly calm and centered")
+        assert valid is True
+        assert reason == "OK"
+
+    def test_valid_soft_future_day_by_day(self):
+        """Valid: 'day by day' is a soft-future phrase, not forbidden."""
+        valid, reason = validate_affirmation("Day by day I grow stronger")
+        assert valid is True
+        assert reason == "OK"
+
+    def test_valid_soft_future_combined(self):
+        """Valid: soft-future phrase in longer affirmation."""
+        valid, reason = validate_affirmation("I am more and more confident each day")
+        assert valid is True
+        assert reason == "OK"
 
 
 class TestValidateAffirmations:

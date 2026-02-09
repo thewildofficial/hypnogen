@@ -16,8 +16,16 @@ Example:
     >>> print(f"Generated {len(audio)} samples at {sr}Hz")
 """
 
+from threading import Lock
+from typing import Dict
+
 import numpy as np
 from kokoro import KPipeline
+
+
+# Module-level cache: reuse KPipeline instances by lang_code
+_pipeline_cache: Dict[str, KPipeline] = {}
+_cache_lock = Lock()
 
 
 # Known voices in Kokoro TTS (based on common patterns)
@@ -36,6 +44,18 @@ KNOWN_VOICES = [
     # Other languages available but not listed here
     # (Portuguese, Spanish, French, Italian, Hindi, Japanese, Chinese)
 ]
+
+
+def _get_pipeline(lang_code: str) -> KPipeline:
+    """Get or create a cached KPipeline for the given language code.
+
+    Thread-safe: uses a lock to prevent redundant pipeline construction
+    when multiple threads request the same lang_code concurrently.
+    """
+    with _cache_lock:
+        if lang_code not in _pipeline_cache:
+            _pipeline_cache[lang_code] = KPipeline(lang_code=lang_code)
+        return _pipeline_cache[lang_code]
 
 
 def synthesize(
@@ -93,9 +113,9 @@ def synthesize(
     # e.g., "af_heart" -> "a", "bm_george" -> "b"
     lang_code = voice[0] if voice else "a"
     
-    # Initialize Kokoro pipeline for the language
+    # Get cached Kokoro pipeline for the language
     # The pipeline will download the model on first use
-    pipeline = KPipeline(lang_code=lang_code)
+    pipeline = _get_pipeline(lang_code)
     
     # Synthesize text to audio
     # The pipeline returns a generator of results

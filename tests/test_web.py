@@ -426,7 +426,7 @@ class TestWebLLMIntegration:
             depth="medium", command_density="medium",
             focus_theme="", custom_instructions="",
         )
-        mock_aff.assert_called_once_with(goal="relax", count=20)
+        mock_aff.assert_called_once_with(goal="relax", count=20, tone="calm therapeutic")
         assert script == "Test script content"
         assert aff_text == "I am calm\nI am focused"
 
@@ -444,3 +444,114 @@ class TestWebLLMIntegration:
         mock_llm.side_effect = LLMError("API timeout")
         with pytest.raises(gr.Error):
             ai_generate_both("relax", "ericksonian", 20, 10, "medium", "medium", "", "", "Gemini Pro")
+
+    def test_ui_has_tone_dropdown(self):
+        from hypnogen.web import TONE_OPTIONS, create_ui
+
+        app = create_ui()
+        dropdowns = [b for b in app.blocks.values() if isinstance(b, gr.Dropdown)]
+        tone_dd = [d for d in dropdowns if "tone" in (d.label or "").lower()]
+        assert len(tone_dd) == 1, "Affirmation Tone dropdown not found"
+        # Gradio converts choices to tuples internally, so extract values for comparison
+        tone_choices = [c[0] if isinstance(c, tuple) else c for c in tone_dd[0].choices]
+        assert tone_choices == TONE_OPTIONS
+        assert tone_dd[0].value == "calm therapeutic"
+
+    def test_tone_dropdown_has_five_options(self):
+        from hypnogen.web import TONE_OPTIONS
+
+        assert len(TONE_OPTIONS) == 5
+        assert TONE_OPTIONS == [
+            "calm therapeutic",
+            "intense coach",
+            "mystic-poetic",
+            "clinical-precision",
+            "minimalist",
+        ]
+
+    def test_ui_has_disclaimer(self):
+        from hypnogen.web import create_ui
+
+        app = create_ui()
+        markdowns = [b for b in app.blocks.values() if isinstance(b, gr.Markdown)]
+        disclaimer_found = any(
+            "disclaimer" in (getattr(m, "value", "") or "").lower() for m in markdowns
+        )
+        assert disclaimer_found, "Disclaimer text not found in UI"
+
+    @patch("hypnogen.web.llm_generate_affirmations")
+    def test_ai_generate_affirmations_passes_tone(self, mock_llm):
+        from hypnogen.web import ai_generate_affirmations
+
+        mock_llm.return_value = ["I am calm"]
+        ai_generate_affirmations("relax", 10, "intense coach")
+        mock_llm.assert_called_once_with(goal="relax", count=10, tone="intense coach")
+
+    @patch("hypnogen.web.llm_generate_script")
+    @patch("hypnogen.web.llm_generate_affirmations")
+    def test_ai_generate_both_passes_tone(self, mock_aff, mock_script):
+        from hypnogen.web import ai_generate_both
+
+        mock_script.return_value = "Script"
+        mock_aff.return_value = ["I am calm"]
+
+        ai_generate_both(
+            "relax", "ericksonian", 20, 10,
+            "medium", "medium", "", "", "Gemini Pro", "mystic-poetic",
+        )
+        mock_aff.assert_called_once_with(goal="relax", count=20, tone="mystic-poetic")
+
+
+class TestCalibrationUI:
+    """Test calibration UI components exist in the Gradio app."""
+
+    def test_ui_has_calibration_accordion(self):
+        """UI has a calibration accordion section."""
+        from hypnogen.web import create_ui
+
+        app = create_ui()
+        accordions = [b for b in app.blocks.values() if isinstance(b, gr.Accordion)]
+        cal_found = any("calibrat" in (getattr(a, "label", "") or "").lower() for a in accordions)
+        assert cal_found, "Calibration accordion not found"
+
+    def test_ui_has_calibration_radio(self):
+        """UI has a Radio component for selecting calibration level."""
+        from hypnogen.web import create_ui
+
+        app = create_ui()
+        radios = [b for b in app.blocks.values() if isinstance(b, gr.Radio)]
+        cal_radio = any(
+            "level" in (r.label or "").lower() or "audibility" in (r.label or "").lower()
+            for r in radios
+        )
+        assert cal_radio, "Calibration level radio not found"
+
+    def test_calibration_radio_has_five_choices(self):
+        """Calibration radio has 5 level choices."""
+        from hypnogen.web import CALIBRATION_LEVELS, create_ui
+
+        app = create_ui()
+        radios = [b for b in app.blocks.values() if isinstance(b, gr.Radio)]
+        cal_radios = [
+            r for r in radios
+            if "level" in (r.label or "").lower() or "audibility" in (r.label or "").lower()
+        ]
+        assert len(cal_radios) == 1
+        radio = cal_radios[0]
+        choices = [c[0] if isinstance(c, tuple) else c for c in radio.choices]
+        assert len(choices) == len(CALIBRATION_LEVELS)
+
+    def test_ui_has_generate_calibration_button(self):
+        """UI has a button to generate calibration samples."""
+        from hypnogen.web import create_ui
+
+        app = create_ui()
+        buttons = [b for b in app.blocks.values() if isinstance(b, gr.Button)]
+        cal_btn = any("calibrat" in (b.value or "").lower() for b in buttons)
+        assert cal_btn, "Generate Calibration button not found"
+
+    def test_default_subliminal_level_constant(self):
+        """DEFAULT_SUBLIMINAL_LEVEL_DB is -18.0."""
+        from hypnogen.web import DEFAULT_SUBLIMINAL_LEVEL_DB
+
+        assert DEFAULT_SUBLIMINAL_LEVEL_DB == -18.0

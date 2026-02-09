@@ -12,6 +12,8 @@ import numpy as np
 from hypnogen.core import (
     AVAILABLE_MODELS,
     LLMError,
+    apply_gain_db,
+    apply_limiter,
     generate_affirmations as llm_generate_affirmations,
     generate_boundary_event,
     generate_script as llm_generate_script,
@@ -31,6 +33,25 @@ from hypnogen.core.tts import synthesize
 
 TTS_SAMPLE_RATE = 24000
 OUTPUT_SAMPLE_RATE = 44100
+CALIBRATION_SAMPLE_DURATION_SEC = 5
+
+CALIBRATION_LEVELS = [
+    (-30, "Very subtle - barely perceptible"),
+    (-24, "Subtle - quiet background"),
+    (-18, "Balanced - optimal for most (DEFAULT)"),
+    (-12, "Audible - clearly hear words"),
+    (-6, "Clear - very audible"),
+]
+
+DEFAULT_SUBLIMINAL_LEVEL_DB = -18.0
+
+TONE_OPTIONS = [
+    "calm therapeutic",
+    "intense coach",
+    "mystic-poetic",
+    "clinical-precision",
+    "minimalist",
+]
 
 DEFAULT_SCRIPT = """And now... as you <cmd pitch="-2" rate="0.9">relax deeply</cmd>... 
 I want you to notice how your breathing... naturally slows down...
@@ -172,6 +193,69 @@ def _render_swarm(
     return generate_swarm(affirmation_audios, duration_sec, sr=sr, rng=rng)
 
 
+def generate_calibration_samples(voice: str) -> list[str]:
+    """Generate 5 calibration audio samples at different subliminal levels.
+
+    Each sample is ~5 seconds of a test affirmation mixed over a pink noise bed
+    at a different swarm gain level. Returns file paths to temporary WAV files.
+
+    Args:
+        voice: Voice ID for TTS synthesis.
+
+    Returns:
+        List of 5 file paths to temporary WAV files, one per calibration level.
+    """
+    sr = OUTPUT_SAMPLE_RATE
+    duration_samples = CALIBRATION_SAMPLE_DURATION_SEC * sr
+    calibration_text = "I am calm and confident"
+    rng = np.random.default_rng(0)
+
+    # Synthesize the test affirmation once
+    tts_audio, tts_sr = synthesize(calibration_text, voice=voice, speed=1.0)
+    tts_audio = _resample_if_needed(tts_audio, tts_sr, sr)
+
+    # Generate pink noise bed for the calibration duration
+    bed_audio = generate_bed(duration_sec=CALIBRATION_SAMPLE_DURATION_SEC, sr=sr, rng=rng)
+    bed_audio = _pad_or_trim(bed_audio, duration_samples)
+
+    # Build a simple swarm-like layer: repeat the affirmation with some gaps
+    swarm_mono = np.zeros(duration_samples, dtype=np.float32)
+    # Place affirmation at 0.5s and 3.0s for two repetitions
+    placement_offsets = [int(0.5 * sr), int(3.0 * sr)]
+    for offset in placement_offsets:
+        end = min(offset + len(tts_audio), duration_samples)
+        clip_len = end - offset
+        if clip_len > 0:
+            swarm_mono[offset:end] += tts_audio[:clip_len]
+
+    swarm_stereo = _to_stereo(swarm_mono)
+
+    # Apply bed gain (constant across all samples)
+    bed_gained = apply_gain_db(bed_audio, -12.0)
+
+    sample_paths = []
+    for level_db, _desc in CALIBRATION_LEVELS:
+        # Apply swarm gain at this calibration level
+        swarm_gained = apply_gain_db(swarm_stereo, float(level_db))
+
+        # Mix bed + swarm
+        mixed = bed_gained.astype(np.float64) + swarm_gained.astype(np.float64)
+        mixed = mixed.astype(np.float32)
+
+        # Limit to prevent clipping
+        mixed = apply_limiter(mixed, sr, threshold_db=-1.0)
+
+        # Write to temp file
+        temp_path = os.path.join(
+            tempfile.gettempdir(),
+            f"hypnogen_cal_{level_db}dB.wav",
+        )
+        write_wav(temp_path, mixed, sr)
+        sample_paths.append(temp_path)
+
+    return sample_paths
+
+
 def _map_model_display_to_id(display_name: str) -> str:
     for display, model_id in AVAILABLE_MODELS:
         if display == display_name:
@@ -208,13 +292,14 @@ def ai_generate_script(
         raise gr.Error(f"LLM script generation failed: {e}")
 
 
-def ai_generate_affirmations(goal: str, count: int = 20) -> str:
+def ai_generate_affirmations(goal: str, count: int = 20, tone: str = "calm therapeutic") -> str:
     if not goal or not goal.strip():
         raise gr.Error("Please enter a goal for affirmation generation")
     try:
         affirmations = llm_generate_affirmations(
             goal=goal.strip(),
             count=int(count),
+            tone=tone,
         )
         return "\n".join(affirmations)
     except LLMError as e:
@@ -231,6 +316,7 @@ def ai_generate_both(
     focus_theme: str,
     custom_instructions: str,
     model: str,
+    tone: str = "calm therapeutic",
 ) -> tuple[str, str]:
     if not goal or not goal.strip():
         raise gr.Error("Please enter a goal for generation")
@@ -247,6 +333,7 @@ def ai_generate_both(
         affirmations = llm_generate_affirmations(
             goal=goal.strip(),
             count=int(count),
+            tone=tone,
         )
         return script, "\n".join(affirmations)
     except LLMError as e:
@@ -260,6 +347,7 @@ def generate_audio(
     swarm_voice: str,
     randomize_voices: bool,
     seed: int | None,
+    subliminal_level_db: float = DEFAULT_SUBLIMINAL_LEVEL_DB,
     progress: gr.Progress = gr.Progress(),
 ) -> tuple[tuple[int, np.ndarray], str, str]:
     sr = OUTPUT_SAMPLE_RATE
@@ -316,11 +404,15 @@ def generate_audio(
     progress(0.95, desc="Mixing layers & applying epochs...")
     time.sleep(0)
     boundary_events = select_boundary_events(rng)
+    
+    custom_gains = {"swarm": subliminal_level_db}
+    
     mixed = mix_layers(
         shepherd=shepherd_audio,
         swarm=swarm_audio,
         bed=bed_audio,
         sr=sr,
+        gain_db=custom_gains,
         apply_epochs=True,
         boundary_events=boundary_events,
         rng=rng,
@@ -389,6 +481,11 @@ def create_ui() -> gr.Blocks:
                     label="Affirmation Count",
                     precision=0,
                 )
+                tone_dropdown = gr.Dropdown(
+                    choices=TONE_OPTIONS,
+                    value="calm therapeutic",
+                    label="Affirmation Tone",
+                )
             with gr.Row():
                 focus_input = gr.Textbox(
                     label="Theme / Focus (optional)",
@@ -422,6 +519,10 @@ def create_ui() -> gr.Blocks:
                     value=DEFAULT_AFFIRMATIONS,
                     lines=5,
                 )
+                gr.Markdown(
+                    "**Disclaimer:** Hypnogen is for experimental purposes only. "
+                    "Not intended for minors. Requires consent from anyone who may hear the audio."
+                )
                 
             with gr.Column():
                 shepherd_voice_dropdown = gr.Dropdown(
@@ -448,6 +549,23 @@ def create_ui() -> gr.Blocks:
                     value="Duration auto-calculated from script",
                     interactive=False,
                 )
+                
+                with gr.Accordion("Subliminal Audibility Calibration", open=False) as calib_accordion:
+                    gr.Markdown(
+                        "Listen to each sample. Which level can you hear the words when focused, "
+                        "but blends into background when not?"
+                    )
+                    calib_audios = []
+                    for level, label in CALIBRATION_LEVELS:
+                        calib_audios.append(gr.Audio(label=f"{label} ({level} dB)", interactive=False))
+                    
+                    calib_level = gr.Radio(
+                        choices=[(f"{label} ({level} dB)", level) for level, label in CALIBRATION_LEVELS],
+                        value=-18,
+                        label="Selected Audibility Level",
+                    )
+                    gen_calib_btn = gr.Button("Generate Calibration Samples")
+
                 generate_btn = gr.Button("Generate Audio", variant="primary")
         
         with gr.Row():
@@ -465,7 +583,7 @@ def create_ui() -> gr.Blocks:
         )
         gen_aff_btn.click(
             fn=ai_generate_affirmations,
-            inputs=[goal_input, aff_count_input],
+            inputs=[goal_input, aff_count_input, tone_dropdown],
             outputs=[affirmations_input],
         )
         gen_both_btn.click(
@@ -474,12 +592,24 @@ def create_ui() -> gr.Blocks:
                 goal_input, style_input, aff_count_input,
                 duration_input, depth_input, density_input,
                 focus_input, custom_instructions_input, model_dropdown,
+                tone_dropdown,
             ],
             outputs=[script_input, affirmations_input],
         )
+        
+        gen_calib_btn.click(
+            fn=generate_calibration_samples,
+            inputs=[swarm_voice_dropdown],
+            outputs=calib_audios,
+        )
+
         generate_btn.click(
             fn=generate_audio,
-            inputs=[script_input, affirmations_input, shepherd_voice_dropdown, swarm_voice_dropdown, randomize_voices_checkbox, seed_number],
+            inputs=[
+                script_input, affirmations_input, shepherd_voice_dropdown, 
+                swarm_voice_dropdown, randomize_voices_checkbox, seed_number,
+                calib_level
+            ],
             outputs=[audio_output, download_file, duration_info],
         )
     

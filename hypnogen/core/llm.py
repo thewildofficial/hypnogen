@@ -20,6 +20,14 @@ AVAILABLE_MODELS = [
     ("Kimi K2.5 (NVIDIA)", "kimi"),
 ]
 
+TONE_GUIDANCE = {
+    "calm therapeutic": "Use warm, gentle, reassuring language. Focus on peace, comfort, and self-acceptance.",
+    "intense coach": "Use powerful, motivating, action-oriented language. Focus on strength, achievement, and dominance.",
+    "mystic-poetic": "Use lyrical, metaphorical, dreamy language. Focus on transformation, magic, and expanded consciousness.",
+    "clinical-precision": "Use clear, neutral, factual language. Focus on evidence-based framing and logical clarity.",
+    "minimalist": "Use sparse, clean, essential language. Every word carries weight. Avoid filler.",
+}
+
 
 class LLMError(Exception):
     pass
@@ -318,33 +326,66 @@ Return ONLY the script text. No explanations, titles, or metadata."""
     return _call_api_with_fallback(messages, preferred_model=model)
 
 
+def _classify_line(line: str) -> str:
+    """Classify affirmation line type: 'I', 'You', or 'Reality'."""
+    lower = line.lower().strip()
+    if lower.startswith(("i ", "my ", "me ")):
+        return "I"
+    elif lower.startswith(("you ", "your ")):
+        return "You"
+    else:
+        return "Reality"
+
+
 def generate_affirmations(
     goal: str,
     count: int = 20,
+    tone: str = "calm therapeutic",
 ) -> list[str]:
+    tone_text = TONE_GUIDANCE.get(tone, TONE_GUIDANCE["calm therapeutic"])
+    max_attempts = 3
+
     prompt = f"""Generate {count} powerful affirmations for this goal: {goal}
+
+TONE: {tone_text}
 
 Rules for each affirmation:
 1. Maximum 7 words
-2. Present tense only (I am, I have, I feel)
-3. No negations (no "not", "never", "don't")
-4. First person (I, My, Me)
+2. Present tense only (I am, I have, I feel, You are, You deserve)
+3. No negations (no "not", "never", "don't", "won't")
+4. No future tense (no "will", "going to", "shall")
 5. Positive and empowering
+
+Diversity requirements — produce a MIX of:
+- "I" statements (I am, My, Me)
+- "You" statements (You are, Your)
+- Reality assertions (The world, Peace, Strength)
+
+Be specific to the goal. Avoid generic filler.
 
 Return one affirmation per line, nothing else."""
 
-    messages = [{"role": "user", "content": prompt}]
-    response = _call_api_with_fallback(messages)
+    for _attempt in range(max_attempts):
+        messages = [{"role": "user", "content": prompt}]
+        response = _call_api_with_fallback(messages)
 
-    lines = response.strip().split("\n")
-    affirmations = []
+        lines = response.strip().split("\n")
+        affirmations = []
 
-    for line in lines:
-        stripped = line.strip()
-        if not stripped:
-            continue
-        valid, _ = validate_affirmation(stripped)
-        if valid:
-            affirmations.append(stripped)
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            valid, _ = validate_affirmation(stripped)
+            if valid:
+                affirmations.append(stripped)
+
+        # Check validity: enough lines and diverse mix
+        has_enough = len(affirmations) >= count
+        categories = {_classify_line(a) for a in affirmations}
+        has_diversity = len(categories) >= 2
+
+        if has_enough and has_diversity:
+            break
 
     return affirmations
