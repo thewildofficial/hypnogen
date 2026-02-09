@@ -279,3 +279,55 @@ def test_validate_marking_density_all_plain_text():
     valid, message = validate_marking_density(segments)
     assert valid is True
     assert message == "OK"
+
+
+def test_snap_tag_self_closing():
+    result = parse_script("Before <snap/> after")
+    assert result == [
+        {"type": "text", "text": "Before"},
+        {"type": "snap"},
+        {"type": "text", "text": "after"},
+    ]
+
+
+def test_drop_tag_with_content():
+    result = parse_script("Now <drop>sleep</drop> deeply")
+    assert result == [
+        {"type": "text", "text": "Now"},
+        {"type": "drop_cue", "word": "sleep"},
+        {"type": "text", "text": "deeply"},
+    ]
+
+
+def test_drop_tag_default_word():
+    result = parse_script("And <drop></drop> now")
+    assert result == [
+        {"type": "text", "text": "And"},
+        {"type": "drop_cue", "word": "drop"},
+        {"type": "text", "text": "now"},
+    ]
+
+
+def test_snap_and_drop_combined():
+    result = parse_script('<snap/> <drop>drop</drop> <pause duration="1000ms"/>')
+    assert len(result) == 3
+    assert result[0]["type"] == "snap"
+    assert result[1]["type"] == "drop_cue"
+    assert result[1]["word"] == "drop"
+    assert result[2]["type"] == "pause"
+    assert result[2]["duration_ms"] == 1000
+
+
+def test_multiple_snap_tags():
+    result = parse_script("<snap/> rest <snap/>")
+    assert len(result) == 3
+    assert result[0]["type"] == "snap"
+    assert result[1] == {"type": "text", "text": "rest"}
+    assert result[2]["type"] == "snap"
+
+
+def test_drop_with_various_words():
+    for word in ["drop", "sleep", "down", "deeper"]:
+        result = parse_script(f"<drop>{word}</drop>")
+        assert result[0]["type"] == "drop_cue"
+        assert result[0]["word"] == word

@@ -221,6 +221,24 @@ def generate_script(
             "Weave suggestions into casual storytelling and anecdotes. "
             "Make it feel like a comfortable, meandering conversation that happens to be deeply relaxing."
         ),
+        "fractionation": (
+            "Use a FRACTIONATION-HEAVY induction style. Fractionation means repeatedly bringing the subject "
+            "UP slightly and then dropping them DEEPER. This creates a ratchet effect where each drop goes deeper "
+            "than before. Structure the script around cycles of:\n"
+            "1. Brief alerting ('Opening your eyes for a moment...') followed by immediate re-induction ('And closing them now... dropping DEEPER')\n"
+            "2. Use verbal drop cues throughout with the <drop>word</drop> tag. Examples:\n"
+            "   - <drop>drop</drop> — a sharp, commanding drop cue\n"
+            "   - <drop>sleep</drop> — a softer drop cue\n"
+            "   - <drop>down</drop> — a directional drop cue\n"
+            "3. Use <snap/> tags to insert crisp finger-snap sounds before or after drop cues:\n"
+            "   - <snap/> <drop>drop</drop> — snap then drop\n"
+            "   - <snap/> <pause duration=\"500ms\"/> <drop>sleep</drop> — snap, pause, then sleep cue\n"
+            "4. Include rapid countdowns with drops: 'Three... two... one... <snap/> <drop>drop</drop>'\n"
+            "5. Use at least 5-8 fractionation cycles in the script\n"
+            "6. Each drop should be followed by deepening language and a pause for the subject to settle\n"
+            "7. Vary the drop cue words: alternate between 'drop', 'sleep', 'down', 'deeper', 'let go'\n"
+            "Be commanding but warm. The drops should feel safe and inviting, not aggressive."
+        ),
     }
     style_guidance = style_map.get(style, style_map["ericksonian"])
 
@@ -273,6 +291,8 @@ FORMATTING RULES:
 - Use <pause duration="500ms"/> for short dramatic pauses
 - Use <pause duration="1000ms"/> between sentences that need breathing room
 - Use <pause duration="1500ms"/> to <pause duration="4000ms"/> for countdowns, breathing, and action compliance
+- Use <snap/> to insert a crisp finger-snap sound (fractionation style only)
+- Use <drop>word</drop> to insert a pitch-shifted drop cue with snap overlay, where word is "drop", "sleep", "down", etc. (fractionation style only)
 - Each paragraph should flow naturally when read aloud
 - No numbered lists, headers, or markdown — just flowing script text
 

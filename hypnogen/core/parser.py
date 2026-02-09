@@ -39,7 +39,7 @@ def parse_script(text: str) -> list[dict[str, Any]]:
     
     # Pattern to match cmd tags or pause tags
     tag_pattern = re.compile(
-        r'<(cmd|pause)\s*([^>]*?)(?:/>|>(.*?)</\1>)',
+        r'<(cmd|pause|snap|drop)\s*([^>]*?)(?:/>|>(.*?)</\1>)',
         re.DOTALL
     )
     
@@ -57,6 +57,11 @@ def parse_script(text: str) -> list[dict[str, Any]]:
             segments.append(_parse_cmd_tag(attributes, content))
         elif tag_name == "pause":
             segments.append(_parse_pause_tag(attributes))
+        elif tag_name == "snap":
+            segments.append({"type": "snap"})
+        elif tag_name == "drop":
+            word = content.strip() if content and content.strip() else "drop"
+            segments.append({"type": "drop_cue", "word": word})
         
         position = match.end()
     
@@ -71,7 +76,7 @@ def parse_script(text: str) -> list[dict[str, Any]]:
 def _has_nested_tags(text: str) -> bool:
     """Check if text contains nested tags."""
     # Look for opening tag followed by another opening tag before closing
-    nested_pattern = re.compile(r'<(cmd|pause)[^>]*>.*?<(cmd|pause)', re.DOTALL)
+    nested_pattern = re.compile(r'<(cmd|pause|snap|drop)[^>]*>.*?<(cmd|pause|snap|drop)', re.DOTALL)
     match = nested_pattern.search(text)
     if match:
         # Verify it's actually nested (not sequential)

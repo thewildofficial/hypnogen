@@ -175,6 +175,25 @@ class TestGenerateScript:
         assert result == "Fallback script"
         mock_nvidia.assert_called_once()
 
+    @patch("hypnogen.core.llm._call_gemini_api")
+    def test_generate_script_fractionation_style(self, mock_gemini):
+        mock_gemini.return_value = "Script content"
+        captured_messages = []
+
+        def capture_call(messages, *args, **kwargs):
+            captured_messages.extend(messages)
+            return "Script"
+
+        mock_gemini.side_effect = capture_call
+
+        with patch.dict(os.environ, {"GEMINI_KEY": "test"}):
+            generate_script("relax", 5, "fractionation")
+
+        prompt_text = " ".join(msg["content"] for msg in captured_messages)
+        assert "fractionation" in prompt_text.lower()
+        assert "<drop>" in prompt_text
+        assert "<snap/>" in prompt_text
+
 
 class TestGenerateAffirmations:
     """Test affirmation generation."""

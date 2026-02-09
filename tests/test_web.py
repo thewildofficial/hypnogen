@@ -50,13 +50,15 @@ class TestUIComponents:
         assert aff_found, "Affirmations input TextArea not found"
 
     def test_ui_has_voice_dropdown(self):
-        """UI has a Dropdown for voice selection."""
+        """UI has Dropdowns for shepherd and swarm voice selection."""
         from hypnogen.web import create_ui
 
         app = create_ui()
         dropdowns = [b for b in app.blocks.values() if isinstance(b, gr.Dropdown)]
-        voice_found = any("voice" in (d.label or "").lower() for d in dropdowns)
-        assert voice_found, "Voice dropdown not found"
+        shepherd_found = any("shepherd" in (d.label or "").lower() for d in dropdowns)
+        swarm_found = any("swarm" in (d.label or "").lower() for d in dropdowns)
+        assert shepherd_found, "Shepherd voice dropdown not found"
+        assert swarm_found, "Swarm voice dropdown not found"
 
     def test_ui_has_seed_input(self):
         """UI has a Number input for seed."""
@@ -66,6 +68,14 @@ class TestUIComponents:
         numbers = [b for b in app.blocks.values() if isinstance(b, gr.Number)]
         seed_found = any("seed" in (n.label or "").lower() for n in numbers)
         assert seed_found, "Seed input not found"
+
+    def test_ui_has_randomize_voices_checkbox(self):
+        from hypnogen.web import create_ui
+
+        app = create_ui()
+        checkboxes = [b for b in app.blocks.values() if isinstance(b, gr.Checkbox)]
+        randomize_found = any("randomize" in (c.label or "").lower() for c in checkboxes)
+        assert randomize_found, "Randomize voices checkbox not found"
 
     def test_ui_has_generate_button(self):
         """UI has a Generate button."""
@@ -110,10 +120,12 @@ class TestGenerateAudio:
 
         script = "Welcome to relaxation."
         affirmations = "I am calm\nI am peaceful"
-        voice = "af_heart"
+        shepherd_voice = "af_heart"
+        swarm_voice = "af_heart"
+        randomize = False
         seed = 42
 
-        result = generate_audio(script, affirmations, voice, seed)
+        result = generate_audio(script, affirmations, shepherd_voice, swarm_voice, randomize, seed)
 
         # Should return tuple: (audio_tuple, filepath, info)
         assert isinstance(result, tuple)
@@ -137,10 +149,12 @@ class TestGenerateAudio:
 
         script = "Welcome."
         affirmations = "I am calm"
-        voice = "af_heart"
+        shepherd_voice = "af_heart"
+        swarm_voice = "af_heart"
+        randomize = False
         seed = 42
 
-        _, filepath, _ = generate_audio(script, affirmations, voice, seed)
+        _, filepath, _ = generate_audio(script, affirmations, shepherd_voice, swarm_voice, randomize, seed)
 
         assert Path(filepath).exists(), f"Temp file not created: {filepath}"
 
@@ -150,10 +164,12 @@ class TestGenerateAudio:
 
         script = "Welcome."
         affirmations = "I am calm"
-        voice = "af_heart"
+        shepherd_voice = "af_heart"
+        swarm_voice = "af_heart"
+        randomize = False
         seed = None
 
-        result = generate_audio(script, affirmations, voice, seed)
+        result = generate_audio(script, affirmations, shepherd_voice, swarm_voice, randomize, seed)
         assert result is not None
 
     def test_generate_audio_validates_affirmations(self, mock_synthesize):
@@ -162,10 +178,12 @@ class TestGenerateAudio:
 
         script = "Welcome."
         affirmations = "I am calm\nI was happy\nI am peaceful"
-        voice = "af_heart"
+        shepherd_voice = "af_heart"
+        swarm_voice = "af_heart"
+        randomize = False
         seed = 42
 
-        result = generate_audio(script, affirmations, voice, seed)
+        result = generate_audio(script, affirmations, shepherd_voice, swarm_voice, randomize, seed)
         assert result is not None
 
     def test_generate_audio_with_embedded_commands(self, mock_synthesize):
@@ -174,11 +192,34 @@ class TestGenerateAudio:
 
         script = 'You can <cmd pitch="-2">relax deeply</cmd> now.'
         affirmations = "I am calm"
-        voice = "af_heart"
+        shepherd_voice = "af_heart"
+        swarm_voice = "af_heart"
+        randomize = False
         seed = 42
 
-        result = generate_audio(script, affirmations, voice, seed)
+        result = generate_audio(script, affirmations, shepherd_voice, swarm_voice, randomize, seed)
         assert result is not None
+
+    def test_generate_audio_with_randomize_voices(self, mock_synthesize):
+        from hypnogen.web import generate_audio
+
+        script = "Welcome."
+        affirmations = "I am calm"
+
+        result = generate_audio(script, affirmations, "af_heart", "af_heart", True, 42)
+        assert result is not None
+        _, _, info = result
+        assert "Shepherd voice:" in info
+        assert "Swarm voice:" in info
+
+    def test_generate_audio_randomize_picks_different_voices(self, mock_synthesize):
+        from hypnogen.web import generate_audio
+
+        result = generate_audio("Welcome.", "I am calm", "af_heart", "af_heart", True, 42)
+        _, _, info = result
+        shepherd_voice = info.split("Shepherd voice: ")[1].split(" |")[0]
+        swarm_voice = info.split("Swarm voice: ")[1]
+        assert shepherd_voice != swarm_voice
 
 
 class TestAppLaunch:

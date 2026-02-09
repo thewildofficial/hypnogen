@@ -12,6 +12,7 @@ from hypnogen.core import (
     AVAILABLE_MODELS,
     LLMError,
     generate_affirmations as llm_generate_affirmations,
+    generate_boundary_event,
     generate_script as llm_generate_script,
     generate_swarm,
     list_voices,
@@ -73,12 +74,13 @@ def _render_shepherd(
     segments: list,
     voice: str,
     target_sr: int,
+    rng: np.random.Generator | None = None,
     progress: gr.Progress | None = None,
     progress_offset: float = 0.0,
     progress_scale: float = 1.0,
 ) -> np.ndarray:
     audio_parts = []
-    tts_segments = [s for s in segments if s["type"] in ("text", "command")]
+    tts_segments = [s for s in segments if s["type"] in ("text", "command", "drop_cue")]
     total_tts = len(tts_segments)
     tts_done = 0
 
@@ -114,6 +116,27 @@ def _render_shepherd(
             pause_samples = int((duration_ms / 1000) * target_sr)
             pause_audio = np.zeros((pause_samples, 2), dtype=np.float32)
             audio_parts.append(pause_audio)
+
+        elif seg_type == "snap":
+            snap_audio = generate_boundary_event("snap", sr=target_sr, rng=rng)
+            audio_parts.append(snap_audio.astype(np.float32))
+
+        elif seg_type == "drop_cue":
+            word = segment.get("word", "drop")
+            word_audio, tts_sr = synthesize(word, voice=voice, speed=0.7)
+            word_audio = apply_analog_marking(word_audio, tts_sr, pitch_shift=-3.0, rate=0.8)
+            word_audio = _resample_if_needed(word_audio, tts_sr, target_sr)
+            word_stereo = _to_stereo(word_audio)
+            snap_audio = generate_boundary_event("snap", sr=target_sr, rng=rng)
+            snap_padded = np.zeros_like(word_stereo)
+            snap_len = min(snap_audio.shape[0], word_stereo.shape[0])
+            snap_padded[:snap_len] = snap_audio[:snap_len] * 0.5
+            combined = word_stereo + snap_padded
+            audio_parts.append(combined.astype(np.float32))
+            tts_done += 1
+            if progress and total_tts > 0:
+                frac = progress_offset + (tts_done / total_tts) * progress_scale
+                progress(frac, desc=f"Shepherd TTS: {tts_done}/{total_tts} segments")
 
     if not audio_parts:
         return np.zeros((1, 2), dtype=np.float32)
@@ -219,7 +242,9 @@ def ai_generate_both(
 def generate_audio(
     script_text: str,
     affirmations_text: str,
-    voice: str,
+    shepherd_voice: str,
+    swarm_voice: str,
+    randomize_voices: bool,
     seed: int | None,
     progress: gr.Progress = gr.Progress(),
 ) -> tuple[tuple[int, np.ndarray], str, str]:
@@ -227,6 +252,12 @@ def generate_audio(
     
     seed_val = int(seed) if seed is not None else None
     rng = np.random.default_rng(seed_val)
+    
+    voices = list_voices()
+    if randomize_voices and len(voices) >= 2:
+        chosen = rng.choice(voices, size=2, replace=False)
+        shepherd_voice = chosen[0]
+        swarm_voice = chosen[1]
     
     progress(0, desc="Parsing script...")
     segments = parse_script(script_text)
@@ -243,7 +274,7 @@ def generate_audio(
         valid_affirmations = ["I am calm"]
     
     shepherd_audio = _render_shepherd(
-        segments, voice, sr,
+        segments, shepherd_voice, sr, rng=rng,
         progress=progress, progress_offset=0.0, progress_scale=0.6,
     )
     length_sec = shepherd_audio.shape[0] // sr
@@ -254,7 +285,7 @@ def generate_audio(
         length_sec = 60
     
     swarm_audio = _render_swarm(
-        valid_affirmations, length_sec, sr, voice, rng,
+        valid_affirmations, length_sec, sr, swarm_voice, rng,
         progress=progress, progress_offset=0.6, progress_scale=0.3,
     )
 
@@ -286,7 +317,7 @@ def generate_audio(
     audio_mono = np.mean(mixed, axis=1) if mixed.ndim == 2 else mixed
     
     progress(1.0, desc="Done!")
-    info_text = f"Generated {length_sec}s session from script"
+    info_text = f"Generated {length_sec}s session | Shepherd voice: {shepherd_voice} | Swarm voice: {swarm_voice}"
     
     return (sr, audio_mono), temp_path, info_text
 
@@ -313,7 +344,7 @@ def create_ui() -> gr.Blocks:
                 )
             with gr.Row():
                 style_input = gr.Dropdown(
-                    choices=["ericksonian", "permissive", "authoritative", "conversational"],
+                    choices=["ericksonian", "permissive", "authoritative", "conversational", "fractionation"],
                     value="ericksonian",
                     label="Script Style",
                 )
@@ -374,10 +405,19 @@ def create_ui() -> gr.Blocks:
                 )
                 
             with gr.Column():
-                voice_dropdown = gr.Dropdown(
+                shepherd_voice_dropdown = gr.Dropdown(
                     choices=list_voices(),
                     value="af_heart",
-                    label="Voice",
+                    label="Shepherd Voice (Main)",
+                )
+                swarm_voice_dropdown = gr.Dropdown(
+                    choices=list_voices(),
+                    value="af_heart",
+                    label="Swarm Voice (Background)",
+                )
+                randomize_voices_checkbox = gr.Checkbox(
+                    value=False,
+                    label="Randomize voices (pick different voices for each track)",
                 )
                 seed_number = gr.Number(
                     value=None,
@@ -420,7 +460,7 @@ def create_ui() -> gr.Blocks:
         )
         generate_btn.click(
             fn=generate_audio,
-            inputs=[script_input, affirmations_input, voice_dropdown, seed_number],
+            inputs=[script_input, affirmations_input, shepherd_voice_dropdown, swarm_voice_dropdown, randomize_voices_checkbox, seed_number],
             outputs=[audio_output, download_file, duration_info],
         )
     
