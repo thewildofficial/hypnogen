@@ -33,16 +33,18 @@ _cache_lock = Lock()
 # Full list available at: https://huggingface.co/hexgrad/Kokoro-82M
 KNOWN_VOICES = [
     # American English (a prefix)
-    "af_heart",  # Female, warm and gentle (default)
-    "am_adam",   # Male, clear and steady
-    "af_bella",  # Female, expressive
-    "af_sarah",  # Female, professional
+    "af_heart",    # Female, warm and gentle (default)
+    "af_bella",    # Female, expressive
+    "af_nicole",   # Female, conversational
+    "af_sarah",    # Female, professional
+    "af_sky",      # Female, bright and clear
+    "am_adam",     # Male, clear and steady
     "am_michael",  # Male, deep voice
     # British English (b prefix)
-    "bf_emma",   # Female, British accent
-    "bm_george",  # Male, British accent
-    # Other languages available but not listed here
-    # (Portuguese, Spanish, French, Italian, Hindi, Japanese, Chinese)
+    "bf_emma",     # Female, British accent
+    "bf_isabella", # Female, British accent, soft
+    "bm_george",   # Male, British accent
+    "bm_lewis",    # Male, British accent, warm
 ]
 
 

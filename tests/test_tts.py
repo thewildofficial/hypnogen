@@ -210,7 +210,6 @@ class TestListVoices:
     @patch('hypnogen.core.tts.KPipeline')
     def test_list_voices_returns_list_of_strings(self, mock_pipeline_class):
         """list_voices should return a list of voice IDs as strings."""
-        # We'll return a hardcoded list for now
         voices = list_voices()
         
         assert isinstance(voices, list)
@@ -227,6 +226,34 @@ class TestListVoices:
     def test_list_voices_includes_male_voice(self, mock_pipeline_class):
         """list_voices should include at least one male voice like 'am_adam'."""
         voices = list_voices()
-        # Check for any male voice (am_* pattern)
         male_voices = [v for v in voices if v.startswith('am_')]
         assert len(male_voices) > 0
+
+    @patch('hypnogen.core.tts.KPipeline')
+    def test_list_voices_includes_american_english_voices(self, mock_pipeline_class):
+        """list_voices should include all American English voices."""
+        voices = list_voices()
+        expected_american = ["af_heart", "af_bella", "af_nicole", "af_sarah", "af_sky", "am_adam", "am_michael"]
+        for voice in expected_american:
+            assert voice in voices, f"Missing American English voice: {voice}"
+
+    @patch('hypnogen.core.tts.KPipeline')
+    def test_list_voices_includes_british_english_voices(self, mock_pipeline_class):
+        """list_voices should include all British English voices."""
+        voices = list_voices()
+        expected_british = ["bf_emma", "bf_isabella", "bm_george", "bm_lewis"]
+        for voice in expected_british:
+            assert voice in voices, f"Missing British English voice: {voice}"
+
+    @patch('hypnogen.core.tts.KPipeline')
+    def test_list_voices_count(self, mock_pipeline_class):
+        """list_voices should return 11 known English voices."""
+        voices = list_voices()
+        assert len(voices) == 11
+
+    @patch('hypnogen.core.tts.KPipeline')
+    def test_list_voices_returns_copy(self, mock_pipeline_class):
+        """list_voices should return a copy, not the original list."""
+        voices1 = list_voices()
+        voices2 = list_voices()
+        assert voices1 is not voices2

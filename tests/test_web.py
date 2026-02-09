@@ -555,3 +555,155 @@ class TestCalibrationUI:
         from hypnogen.web import DEFAULT_SUBLIMINAL_LEVEL_DB
 
         assert DEFAULT_SUBLIMINAL_LEVEL_DB == -18.0
+
+
+class TestProgressReporting:
+    """Test that generate_audio provides detailed, smooth progress updates."""
+
+    @pytest.fixture
+    def mock_synthesize(self):
+        """Mock TTS synthesize to avoid downloading model."""
+        mock_audio = np.zeros(24000, dtype=np.float32)
+        with patch("hypnogen.web.synthesize") as mock:
+            mock.return_value = (mock_audio, 24000)
+            yield mock
+
+    @pytest.fixture
+    def progress_tracker(self):
+        """Capture all progress() calls with (fraction, desc) tuples."""
+        calls = []
+
+        class FakeProgress:
+            def __call__(self, frac, desc=""):
+                calls.append((frac, desc))
+
+        return FakeProgress(), calls
+
+    def test_progress_updates_include_parsing_stage(self, mock_synthesize, progress_tracker):
+        """Progress reports a 'Parsing script' stage."""
+        from hypnogen.web import generate_audio
+
+        progress, calls = progress_tracker
+        generate_audio("Welcome.", "I am calm", "af_heart", "af_heart", False, 42, progress=progress)
+
+        descs = [desc for _, desc in calls]
+        assert any("Parsing" in d for d in descs), f"No 'Parsing' stage found in: {descs}"
+
+    def test_progress_updates_include_shepherd_tts(self, mock_synthesize, progress_tracker):
+        """Progress reports shepherd TTS with segment counts."""
+        from hypnogen.web import generate_audio
+
+        progress, calls = progress_tracker
+        generate_audio(
+            "Welcome to relaxation. Feel calm now.",
+            "I am calm", "af_heart", "af_heart", False, 42, progress=progress,
+        )
+
+        descs = [desc for _, desc in calls]
+        shepherd_descs = [d for d in descs if "Shepherd" in d]
+        assert len(shepherd_descs) > 0, f"No shepherd TTS progress in: {descs}"
+        # Should include segment count like "1/2"
+        assert any("/" in d for d in shepherd_descs), f"No segment count in: {shepherd_descs}"
+
+    def test_progress_updates_include_swarm_tts(self, mock_synthesize, progress_tracker):
+        """Progress reports swarm TTS with affirmation counts."""
+        from hypnogen.web import generate_audio
+
+        progress, calls = progress_tracker
+        generate_audio(
+            "Welcome.", "I am calm\nI am strong\nI am focused",
+            "af_heart", "af_heart", False, 42, progress=progress,
+        )
+
+        descs = [desc for _, desc in calls]
+        swarm_descs = [d for d in descs if "Swarm" in d]
+        assert len(swarm_descs) > 0, f"No swarm TTS progress in: {descs}"
+        assert any("/" in d for d in swarm_descs), f"No affirmation count in: {swarm_descs}"
+
+    def test_progress_updates_include_binaural_stage(self, mock_synthesize, progress_tracker):
+        """Progress reports binaural bed generation stage."""
+        from hypnogen.web import generate_audio
+
+        progress, calls = progress_tracker
+        generate_audio("Welcome.", "I am calm", "af_heart", "af_heart", False, 42, progress=progress)
+
+        descs = [desc for _, desc in calls]
+        assert any("binaural" in d.lower() for d in descs), f"No binaural stage in: {descs}"
+
+    def test_progress_updates_include_mixing_stage(self, mock_synthesize, progress_tracker):
+        """Progress reports mixing/epochs stage."""
+        from hypnogen.web import generate_audio
+
+        progress, calls = progress_tracker
+        generate_audio("Welcome.", "I am calm", "af_heart", "af_heart", False, 42, progress=progress)
+
+        descs = [desc for _, desc in calls]
+        assert any("mix" in d.lower() for d in descs), f"No mixing stage in: {descs}"
+
+    def test_progress_updates_include_export_stage(self, mock_synthesize, progress_tracker):
+        """Progress reports WAV export stage."""
+        from hypnogen.web import generate_audio
+
+        progress, calls = progress_tracker
+        generate_audio("Welcome.", "I am calm", "af_heart", "af_heart", False, 42, progress=progress)
+
+        descs = [desc for _, desc in calls]
+        assert any("export" in d.lower() or "wav" in d.lower() for d in descs), (
+            f"No export stage in: {descs}"
+        )
+
+    def test_progress_fractions_monotonically_increase(self, mock_synthesize, progress_tracker):
+        """Progress fractions never decrease (monotonically non-decreasing)."""
+        from hypnogen.web import generate_audio
+
+        progress, calls = progress_tracker
+        generate_audio(
+            "Welcome to relaxation. Feel calm now.",
+            "I am calm\nI am strong",
+            "af_heart", "af_heart", False, 42, progress=progress,
+        )
+
+        fractions = [frac for frac, _ in calls]
+        assert len(fractions) >= 5, f"Too few progress updates: {len(fractions)}"
+        for i in range(1, len(fractions)):
+            assert fractions[i] >= fractions[i - 1], (
+                f"Progress decreased at step {i}: {fractions[i-1]} -> {fractions[i]}"
+            )
+
+    def test_progress_starts_at_zero_ends_at_one(self, mock_synthesize, progress_tracker):
+        """Progress starts at 0.0 and ends at 1.0."""
+        from hypnogen.web import generate_audio
+
+        progress, calls = progress_tracker
+        generate_audio("Welcome.", "I am calm", "af_heart", "af_heart", False, 42, progress=progress)
+
+        fractions = [frac for frac, _ in calls]
+        assert fractions[0] == 0.0, f"First progress should be 0.0, got {fractions[0]}"
+        assert fractions[-1] == 1.0, f"Last progress should be 1.0, got {fractions[-1]}"
+
+    def test_progress_has_intermediate_updates(self, mock_synthesize, progress_tracker):
+        """Progress has updates between 0 and 1 (not just jump from 0 to 1)."""
+        from hypnogen.web import generate_audio
+
+        progress, calls = progress_tracker
+        generate_audio(
+            "Welcome to deep relaxation. Feel calm. Release tension.",
+            "I am calm\nI am strong\nI am focused",
+            "af_heart", "af_heart", False, 42, progress=progress,
+        )
+
+        fractions = [frac for frac, _ in calls]
+        intermediate = [f for f in fractions if 0.0 < f < 1.0]
+        assert len(intermediate) >= 3, (
+            f"Expected at least 3 intermediate updates, got {len(intermediate)}: {fractions}"
+        )
+
+    def test_progress_done_description(self, mock_synthesize, progress_tracker):
+        """Final progress update has 'Done' description."""
+        from hypnogen.web import generate_audio
+
+        progress, calls = progress_tracker
+        generate_audio("Welcome.", "I am calm", "af_heart", "af_heart", False, 42, progress=progress)
+
+        last_desc = calls[-1][1]
+        assert "done" in last_desc.lower(), f"Final desc should say 'Done', got: '{last_desc}'"

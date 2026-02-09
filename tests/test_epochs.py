@@ -255,15 +255,13 @@ def test_generate_boundary_event_snap_shape():
     assert event.shape[1] == 2
 
 
-def test_generate_boundary_event_snap_short():
-    """Snap event is short transient (10-30ms range)."""
+def test_generate_boundary_event_snap_duration():
+    """Snap event should be 2-3 seconds long."""
     sr = 44100
     event = generate_boundary_event("snap", sr=sr)
-    
-    # Should be short but with decay tail
-    # Total duration: 10-20ms burst + 200ms tail = ~220ms max
-    max_samples = int(0.25 * sr)  # 250ms
-    assert event.shape[0] <= max_samples
+    duration = event.shape[0] / sr
+    assert duration >= 2.0, f"Snap too short: {duration:.3f}s"
+    assert duration <= 3.0, f"Snap too long: {duration:.3f}s"
 
 
 def test_generate_boundary_event_snap_not_silence():
@@ -276,6 +274,17 @@ def test_generate_boundary_event_snap_normalized():
     """Snap event is normalized to [-1, 1]."""
     event = generate_boundary_event("snap", sr=44100)
     assert np.max(np.abs(event)) <= 1.0
+
+
+def test_generate_boundary_event_snap_smooth_decay():
+    """Snap should have smooth decay without artifacts in tail."""
+    sr = 44100
+    event = generate_boundary_event("snap", sr=sr)
+    mono = event[:, 0]
+    # Check tail (after 0.5s) for spikes that indicate artifacts
+    tail_start = int(0.5 * sr)
+    tail = mono[tail_start:]
+    assert np.max(np.abs(tail)) < 0.1, "Artifacts detected in snap tail"
 
 
 def test_generate_boundary_event_stereo_collapse_shape():

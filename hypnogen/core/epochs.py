@@ -121,24 +121,26 @@ def generate_boundary_event(
         return np.zeros((num_samples, 2))
 
     elif event_type == "snap":
-        total_samples = int(sr * 0.08)
+        duration_sec = 2.5
+        total_samples = int(sr * duration_sec)
         t = np.arange(total_samples) / sr
 
-        click_duration = int(sr * 0.003)
-        click_t = np.arange(click_duration) / sr
-        click = np.sin(2 * np.pi * 4000 * click_t) * np.exp(-click_t / 0.001)
+        # Multi-component snap: base 4kHz + higher harmonic + subtle noise
+        primary = np.sin(2 * np.pi * 4000 * t)
+        harmonic = 0.4 * np.sin(2 * np.pi * 7500 * t)
+        noise_texture = rng.standard_normal(total_samples) * 0.15
 
-        noise_samples = int(sr * 0.015)
-        noise = rng.standard_normal(noise_samples)
-        noise_hp = np.diff(noise, prepend=noise[0])
-        noise_hp = noise_hp / np.max(np.abs(noise_hp)) * 0.5
+        combined = primary + harmonic + noise_texture
 
-        combined = np.zeros(total_samples)
-        combined[:len(click)] += click
-        combined[len(click):len(click) + len(noise_hp)] += noise_hp
+        # Smooth envelope: fast attack (2ms), long exponential decay
+        attack_samples = max(1, int(sr * 0.002))
+        attack = np.linspace(0.0, 1.0, attack_samples)
+        decay_time_constant = 0.15
+        decay = np.exp(-t / decay_time_constant)
+        envelope = decay.copy()
+        envelope[:attack_samples] *= attack
 
-        decay = np.exp(-t / 0.015)
-        signal = combined * decay
+        signal = combined * envelope
 
         max_val = np.max(np.abs(signal))
         if max_val > 0:
