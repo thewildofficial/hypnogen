@@ -4,6 +4,7 @@ Provides a pluggable TTS backend strategy:
 - PyTorchProvider: standard single-process Kokoro TTS (default)
 - MultiprocessProvider: distributes TTS across N worker processes
 - QuantizedProvider: applies dynamic INT8 quantization for speed
+- CoreMLProvider: uses Apple Neural Engine for acceleration (macOS only)
 
 Usage:
     from hypnogen.core.tts_providers import get_provider
@@ -17,11 +18,13 @@ from hypnogen.core.tts_providers.base import TTSProvider
 from hypnogen.core.tts_providers.pytorch import PyTorchProvider
 from hypnogen.core.tts_providers.multiprocess import MultiprocessProvider
 from hypnogen.core.tts_providers.quantized import QuantizedProvider
+from hypnogen.core.tts_providers.coreml import CoreMLProvider
 
 _PROVIDERS = {
     "pytorch": PyTorchProvider,
     "multiprocess": MultiprocessProvider,
     "quantized": QuantizedProvider,
+    "coreml": CoreMLProvider,
 }
 
 
@@ -51,5 +54,6 @@ __all__ = [
     "PyTorchProvider",
     "MultiprocessProvider",
     "QuantizedProvider",
+    "CoreMLProvider",
     "get_provider",
 ]
