@@ -2,6 +2,10 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+include = ["hypnogen*"]
+exclude = ["cosyvoice*", "dia*", "f5-tts*", "fish-speech*", "melotts*", "orpheus*", "parler-tts*", "piper*", "spark-tts*", "zonos*", "tests*"]
+
 [project]
 name = "hypnogen"
 version = "0.1.0"
@@ -22,15 +26,18 @@ classifiers = [
 ]
 dependencies = [
     "click>=8.1.8",
+    "fastapi>=0.115.0",
     "gradio>=4.44.1",
     "httpx>=0.28.1",
     "kokoro>=0.2.2",
     "librosa>=0.11.0",
     "numpy>=2.0.2",
     "pedalboard>=0.9.19",
+    "pydantic>=2.0",
     "python-dotenv>=1.2.1",
     "scipy>=1.13.1",
     "soundfile>=0.13.1",
+    "uvicorn>=0.34.0",
 ]
 
 [dependency-groups]
