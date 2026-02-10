@@ -1,32 +1,20 @@
 """Full-pipeline CLI for hypnosis audio generation."""
 
 import os
+import shutil
+import tempfile
 
 import click
-import librosa
-import numpy as np
 
 from hypnogen.core import (
-    EPOCH_BOUNDARIES,
     LLMError,
-    create_render_metadata,
-    export_session,
     generate_affirmations as llm_generate_affirmations,
     generate_script as llm_generate_script,
-    generate_swarm,
-    mix_layers,
     parse_script,
-    select_boundary_events,
+    render_session,
     validate_affirmation,
     validate_marking_density,
-    write_wav,
 )
-from hypnogen.core.binaural import generate_bed
-from hypnogen.core.effects import apply_analog_marking
-from hypnogen.core.tts import synthesize
-
-
-TTS_SAMPLE_RATE = 24000
 
 
 @click.group()
@@ -163,8 +151,6 @@ def generate(
         click.echo("Error: Either --affirmations or --generate-affirmations/--use-llm is required", err=True)
         raise SystemExit(1)
 
-    rng = np.random.default_rng(seed)
-
     # --- Script ---
     if generate_script:
         click.echo(f"Generating script with LLM for goal: {goal!r}...")
@@ -216,124 +202,37 @@ def generate(
         click.echo("Error: No valid affirmations found", err=True)
         raise SystemExit(1)
 
-    shepherd_audio = _render_shepherd(segments, voice, sr)
-    swarm_audio = _render_swarm(valid_affirmations, length_sec, sr, voice, rng)
-    bed_audio = generate_bed(duration_sec=length_sec, sr=sr, rng=rng)
-
-    target_samples = length_sec * sr
-    shepherd_audio = _pad_or_trim(shepherd_audio, target_samples)
-    swarm_audio = _pad_or_trim(swarm_audio, target_samples)
-    bed_audio = _pad_or_trim(bed_audio, target_samples)
-
-    boundary_events = select_boundary_events(rng)
-    mixed = mix_layers(
-        shepherd=shepherd_audio,
-        swarm=swarm_audio,
-        bed=bed_audio,
-        sr=sr,
-        apply_epochs=True,
-        boundary_events=boundary_events,
-        rng=rng,
-    )
-
-    if stems_dir:
-        metadata = create_render_metadata(
-            seed=seed or 0,
-            duration_sec=length_sec,
+    # --- Render via render-core ---
+    with tempfile.TemporaryDirectory() as render_dir:
+        result = render_session(
+            script_text=script_text,
+            affirmations=valid_affirmations,
+            output_dir=render_dir,
+            voice=voice,
+            seed=seed,
+            length_sec=length_sec,
             sr=sr,
-            voices={"shepherd": voice, "swarm": voice},
-            epoch_boundaries=EPOCH_BOUNDARIES,
-        )
-        export_session(
-            output_dir=stems_dir,
-            metadata=metadata,
-            shepherd=shepherd_audio,
-            swarm=swarm_audio,
-            bed=bed_audio,
-            mix=mixed,
-            sr=sr,
+            export_stems=bool(stems_dir),
         )
 
-    write_wav(out, mixed, sr)
+        # Copy mix WAV to the user-specified output path
+        os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+        shutil.copy2(result["paths"]["mix"], out)
+
+        # Copy stems to the user-specified stems directory if requested
+        if stems_dir:
+            os.makedirs(stems_dir, exist_ok=True)
+            # Copy stem WAVs
+            for stem_name, stem_path in result["paths"]["stems"].items():
+                shutil.copy2(stem_path, os.path.join(stems_dir, f"{stem_name}.wav"))
+            # Also copy the mix and render.json into stems dir
+            shutil.copy2(result["paths"]["mix"], os.path.join(stems_dir, "mix.wav"))
+            shutil.copy2(
+                result["paths"]["metadata"],
+                os.path.join(stems_dir, "render.json"),
+            )
+
     click.echo(f"Generated: {out}")
-
-
-def _render_shepherd(segments: list, voice: str, target_sr: int) -> np.ndarray:
-    tts_sr = TTS_SAMPLE_RATE
-    mono_parts: list[np.ndarray] = []
-
-    for segment in segments:
-        seg_type = segment["type"]
-
-        if seg_type == "text":
-            audio, _ = synthesize(segment["text"], voice=voice, speed=0.9)
-            mono_parts.append(audio)
-
-        elif seg_type == "command":
-            audio, _ = synthesize(segment["text"], voice=voice, speed=0.9)
-            pitch = segment.get("pitch", 0.0)
-            rate = segment.get("rate", 1.0)
-
-            if pitch != 0.0 or rate != 1.0:
-                audio = apply_analog_marking(audio, tts_sr, pitch_shift=pitch, rate=rate)
-
-            mono_parts.append(audio)
-
-        elif seg_type == "pause":
-            duration_ms = segment["duration_ms"]
-            pause_samples = int((duration_ms / 1000) * tts_sr)
-            mono_parts.append(np.zeros(pause_samples, dtype=np.float32))
-
-    if not mono_parts:
-        return np.zeros((1, 2), dtype=np.float32)
-
-    mono_concat = np.concatenate(mono_parts)
-    mono_resampled = _resample_if_needed(mono_concat, tts_sr, target_sr)
-    return _to_stereo(mono_resampled)
-
-
-def _render_swarm(
-    affirmations: list[str],
-    duration_sec: float,
-    sr: int,
-    voice: str,
-    rng: np.random.Generator,
-) -> np.ndarray:
-    tts_sr = TTS_SAMPLE_RATE
-    affirmation_audios = []
-    for aff in affirmations:
-        audio, _ = synthesize(aff, voice=voice, speed=1.3)
-        affirmation_audios.append(audio)
-
-    swarm_at_tts_sr = generate_swarm(affirmation_audios, duration_sec, sr=tts_sr, rng=rng)
-    left = _resample_if_needed(swarm_at_tts_sr[:, 0], tts_sr, sr)
-    right = _resample_if_needed(swarm_at_tts_sr[:, 1], tts_sr, sr)
-    return np.column_stack([left, right])
-
-
-def _resample_if_needed(audio: np.ndarray, orig_sr: int, target_sr: int) -> np.ndarray:
-    if orig_sr == target_sr:
-        return audio
-    return librosa.resample(audio, orig_sr=orig_sr, target_sr=target_sr)
-
-
-def _to_stereo(audio: np.ndarray) -> np.ndarray:
-    if audio.ndim == 1:
-        return np.column_stack([audio, audio])
-    return audio
-
-
-def _pad_or_trim(audio: np.ndarray, target_samples: int) -> np.ndarray:
-    current_samples = audio.shape[0]
-
-    if current_samples == target_samples:
-        return audio
-
-    if current_samples < target_samples:
-        padding = np.zeros((target_samples - current_samples, 2), dtype=audio.dtype)
-        return np.concatenate([audio, padding], axis=0)
-
-    return audio[:target_samples]
 
 
 def main():

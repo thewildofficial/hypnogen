@@ -30,7 +30,8 @@ from hypnogen.core.swarm import (
     validate_affirmation,
     validate_affirmations,
 )
-from hypnogen.core.tts import list_voices, synthesize
+from hypnogen.core.render import render_session
+from hypnogen.core.tts import list_voices, synthesize, synthesize_batch
 from hypnogen.core.llm import (
     AVAILABLE_MODELS,
     LLMError,
@@ -48,6 +49,7 @@ __all__ = [
     "schedule_affirmations",
     "generate_swarm",
     "synthesize",
+    "synthesize_batch",
     "list_voices",
     "EPOCH_BOUNDARIES",
     "EPOCH_NAMES",
@@ -71,4 +73,5 @@ __all__ = [
     "generate_script",
     "get_api_key",
     "AVAILABLE_MODELS",
+    "render_session",
 ]

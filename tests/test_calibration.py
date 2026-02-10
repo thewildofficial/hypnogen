@@ -57,9 +57,11 @@ def test_generate_calibration_samples(mock_synthesize):
         assert s.endswith(".wav")
         assert Path(s).exists()
 
-@patch("hypnogen.web.mix_layers")
-@patch("hypnogen.web.synthesize")
-def test_generate_audio_uses_selected_level(mock_synthesize, mock_mix):
+@patch("hypnogen.core.render.mix_layers")
+@patch("hypnogen.core.render.synthesize")
+@patch("hypnogen.core.effects.apply_pitch_shift", side_effect=lambda a, sr, n: a.copy())
+@patch("hypnogen.core.effects.apply_time_stretch", side_effect=lambda a, r: a.copy())
+def test_generate_audio_uses_selected_level(mock_stretch, mock_pitch, mock_synthesize, mock_mix):
     """generate_audio passes the selected subliminal level to mix_layers."""
     from hypnogen.web import generate_audio
     

@@ -8,6 +8,10 @@ import gradio as gr
 import numpy as np
 import pytest
 
+# After render-core refactor, generate_audio delegates to render_session,
+# which calls synthesize from hypnogen.core.render.
+_RENDER_SYNTHESIZE_TARGET = "hypnogen.core.render.synthesize"
+
 
 class TestCreateUI:
     """Test create_ui function."""
@@ -110,9 +114,11 @@ class TestGenerateAudio:
     def mock_synthesize(self):
         """Mock TTS synthesize to avoid downloading model."""
         mock_audio = np.zeros(24000, dtype=np.float32)
-        with patch("hypnogen.web.synthesize") as mock:
-            mock.return_value = (mock_audio, 24000)
-            yield mock
+        with patch(_RENDER_SYNTHESIZE_TARGET) as mock_synth, \
+             patch("hypnogen.core.effects.apply_pitch_shift", side_effect=lambda a, sr, n: a.copy()), \
+             patch("hypnogen.core.effects.apply_time_stretch", side_effect=lambda a, r: a.copy()):
+            mock_synth.return_value = (mock_audio, 24000)
+            yield mock_synth
 
     def test_generate_audio_returns_audio_tuple_and_filepath(self, mock_synthesize):
         """generate_audio returns ((audio_array, sample_rate), filepath)."""
@@ -564,9 +570,11 @@ class TestProgressReporting:
     def mock_synthesize(self):
         """Mock TTS synthesize to avoid downloading model."""
         mock_audio = np.zeros(24000, dtype=np.float32)
-        with patch("hypnogen.web.synthesize") as mock:
-            mock.return_value = (mock_audio, 24000)
-            yield mock
+        with patch(_RENDER_SYNTHESIZE_TARGET) as mock_synth, \
+             patch("hypnogen.core.effects.apply_pitch_shift", side_effect=lambda a, sr, n: a.copy()), \
+             patch("hypnogen.core.effects.apply_time_stretch", side_effect=lambda a, r: a.copy()):
+            mock_synth.return_value = (mock_audio, 24000)
+            yield mock_synth
 
     @pytest.fixture
     def progress_tracker(self):

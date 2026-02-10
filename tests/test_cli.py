@@ -9,6 +9,10 @@ import numpy as np
 import pytest
 from click.testing import CliRunner
 
+# After the render-core refactor, CLI delegates to render_session() which
+# calls synthesize internally. Mock the canonical location in render module.
+_SYNTHESIZE_MOCK_TARGET = "hypnogen.core.render.synthesize"
+
 
 class TestCLIHelp:
     """Test CLI help and structure."""
@@ -134,9 +138,11 @@ class TestCLIGeneration:
         """Mock TTS synthesize to avoid downloading model."""
         # Return 1 second of silence at 24000Hz
         mock_audio = np.zeros(24000, dtype=np.float32)
-        with patch("hypnogen.cli.synthesize") as mock:
-            mock.return_value = (mock_audio, 24000)
-            yield mock
+        with patch(_SYNTHESIZE_MOCK_TARGET) as mock_synth, \
+             patch("hypnogen.core.effects.apply_pitch_shift", side_effect=lambda a, sr, n: a.copy()), \
+             patch("hypnogen.core.effects.apply_time_stretch", side_effect=lambda a, r: a.copy()):
+            mock_synth.return_value = (mock_audio, 24000)
+            yield mock_synth
 
     @pytest.fixture
     def temp_files(self):
@@ -323,9 +329,11 @@ class TestCLIAffirmationValidation:
     def mock_synthesize(self):
         """Mock TTS synthesize to avoid downloading model."""
         mock_audio = np.zeros(24000, dtype=np.float32)
-        with patch("hypnogen.cli.synthesize") as mock:
-            mock.return_value = (mock_audio, 24000)
-            yield mock
+        with patch(_SYNTHESIZE_MOCK_TARGET) as mock_synth, \
+             patch("hypnogen.core.effects.apply_pitch_shift", side_effect=lambda a, sr, n: a.copy()), \
+             patch("hypnogen.core.effects.apply_time_stretch", side_effect=lambda a, r: a.copy()):
+            mock_synth.return_value = (mock_audio, 24000)
+            yield mock_synth
 
     def test_invalid_affirmations_are_skipped(self, mock_synthesize):
         """Invalid affirmations are skipped with warning."""
@@ -372,9 +380,11 @@ class TestCLIMarkingDensityWarning:
     def mock_synthesize(self):
         """Mock TTS synthesize to avoid downloading model."""
         mock_audio = np.zeros(24000, dtype=np.float32)
-        with patch("hypnogen.cli.synthesize") as mock:
-            mock.return_value = (mock_audio, 24000)
-            yield mock
+        with patch(_SYNTHESIZE_MOCK_TARGET) as mock_synth, \
+             patch("hypnogen.core.effects.apply_pitch_shift", side_effect=lambda a, sr, n: a.copy()), \
+             patch("hypnogen.core.effects.apply_time_stretch", side_effect=lambda a, r: a.copy()):
+            mock_synth.return_value = (mock_audio, 24000)
+            yield mock_synth
 
     def test_excessive_marking_density_shows_warning(self, mock_synthesize):
         """Script with too many marked commands shows warning."""
@@ -421,9 +431,11 @@ class TestCLILLMIntegration:
     @pytest.fixture
     def mock_synthesize(self):
         mock_audio = np.zeros(24000, dtype=np.float32)
-        with patch("hypnogen.cli.synthesize") as mock:
-            mock.return_value = (mock_audio, 24000)
-            yield mock
+        with patch(_SYNTHESIZE_MOCK_TARGET) as mock_synth, \
+             patch("hypnogen.core.effects.apply_pitch_shift", side_effect=lambda a, sr, n: a.copy()), \
+             patch("hypnogen.core.effects.apply_time_stretch", side_effect=lambda a, r: a.copy()):
+            mock_synth.return_value = (mock_audio, 24000)
+            yield mock_synth
 
     def test_help_shows_llm_options(self):
         from hypnogen.cli import cli

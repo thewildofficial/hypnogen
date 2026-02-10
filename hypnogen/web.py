@@ -6,8 +6,8 @@ import tempfile
 import time
 
 import gradio as gr
-import librosa
 import numpy as np
+import soundfile as sf
 
 from hypnogen.core import (
     AVAILABLE_MODELS,
@@ -15,19 +15,13 @@ from hypnogen.core import (
     apply_gain_db,
     apply_limiter,
     generate_affirmations as llm_generate_affirmations,
-    generate_boundary_event,
     generate_script as llm_generate_script,
-    generate_swarm,
     list_voices,
-    mix_layers,
-    parse_script,
-    select_boundary_events,
+    render_session,
     validate_affirmation,
-    validate_marking_density,
     write_wav,
 )
 from hypnogen.core.binaural import generate_bed
-from hypnogen.core.effects import apply_analog_marking
 from hypnogen.core.tts import synthesize
 
 
@@ -71,18 +65,22 @@ I am powerful"""
 
 
 def _resample_if_needed(audio: np.ndarray, orig_sr: int, target_sr: int) -> np.ndarray:
+    """Resample audio if sample rates differ. Used only by calibration."""
+    import librosa
     if orig_sr == target_sr:
         return audio
     return librosa.resample(audio, orig_sr=orig_sr, target_sr=target_sr)
 
 
 def _to_stereo(audio: np.ndarray) -> np.ndarray:
+    """Convert mono to stereo. Used only by calibration."""
     if audio.ndim == 1:
         return np.column_stack([audio, audio])
     return audio
 
 
 def _pad_or_trim(audio: np.ndarray, target_samples: int) -> np.ndarray:
+    """Pad or trim stereo audio to target sample count. Used only by calibration."""
     current_samples = audio.shape[0]
     if current_samples == target_samples:
         return audio
@@ -90,109 +88,6 @@ def _pad_or_trim(audio: np.ndarray, target_samples: int) -> np.ndarray:
         padding = np.zeros((target_samples - current_samples, 2), dtype=audio.dtype)
         return np.concatenate([audio, padding], axis=0)
     return audio[:target_samples]
-
-
-def _render_shepherd(
-    segments: list,
-    voice: str,
-    target_sr: int,
-    rng: np.random.Generator | None = None,
-    progress: gr.Progress | None = None,
-    progress_offset: float = 0.0,
-    progress_scale: float = 1.0,
-) -> np.ndarray:
-    tts_sr = TTS_SAMPLE_RATE
-    mono_parts: list[np.ndarray] = []
-    tts_segments = [s for s in segments if s["type"] in ("text", "command", "drop_cue")]
-    total_tts = len(tts_segments)
-    tts_done = 0
-
-    for segment in segments:
-        seg_type = segment["type"]
-
-        if seg_type == "text":
-            audio, _ = synthesize(segment["text"], voice=voice, speed=0.9)
-            mono_parts.append(audio)
-            tts_done += 1
-            if progress and total_tts > 0:
-                frac = progress_offset + (tts_done / total_tts) * progress_scale
-                progress(frac, desc=f"Shepherd TTS: {tts_done}/{total_tts} segments")
-                time.sleep(0)
-
-        elif seg_type == "command":
-            audio, _ = synthesize(segment["text"], voice=voice, speed=0.9)
-            pitch = segment.get("pitch", 0.0)
-            rate = segment.get("rate", 1.0)
-
-            if pitch != 0.0 or rate != 1.0:
-                audio = apply_analog_marking(audio, tts_sr, pitch_shift=pitch, rate=rate)
-
-            mono_parts.append(audio)
-            tts_done += 1
-            if progress and total_tts > 0:
-                frac = progress_offset + (tts_done / total_tts) * progress_scale
-                progress(frac, desc=f"Shepherd TTS: {tts_done}/{total_tts} segments")
-                time.sleep(0)
-
-        elif seg_type == "pause":
-            duration_ms = segment["duration_ms"]
-            pause_samples = int((duration_ms / 1000) * tts_sr)
-            mono_parts.append(np.zeros(pause_samples, dtype=np.float32))
-
-        elif seg_type == "snap":
-            snap_stereo = generate_boundary_event("snap", sr=tts_sr, rng=rng)
-            mono_parts.append(snap_stereo[:, 0].astype(np.float32))
-
-        elif seg_type == "drop_cue":
-            word = segment.get("word", "drop")
-            word_audio, _ = synthesize(word, voice=voice, speed=0.7)
-            word_audio = apply_analog_marking(word_audio, tts_sr, pitch_shift=-3.0, rate=0.8)
-            snap_stereo = generate_boundary_event("snap", sr=tts_sr, rng=rng)
-            snap_mono = snap_stereo[:, 0]
-            snap_padded = np.zeros_like(word_audio)
-            snap_len = min(len(snap_mono), len(word_audio))
-            snap_padded[:snap_len] = snap_mono[:snap_len] * 0.5
-            combined = word_audio + snap_padded
-            mono_parts.append(combined.astype(np.float32))
-            tts_done += 1
-            if progress and total_tts > 0:
-                frac = progress_offset + (tts_done / total_tts) * progress_scale
-                progress(frac, desc=f"Shepherd TTS: {tts_done}/{total_tts} segments")
-                time.sleep(0)
-
-    if not mono_parts:
-        return np.zeros((1, 2), dtype=np.float32)
-
-    mono_concat = np.concatenate(mono_parts)
-    mono_resampled = _resample_if_needed(mono_concat, tts_sr, target_sr)
-    return _to_stereo(mono_resampled)
-
-
-def _render_swarm(
-    affirmations: list[str],
-    duration_sec: float,
-    sr: int,
-    voice: str,
-    rng: np.random.Generator,
-    progress: gr.Progress | None = None,
-    progress_offset: float = 0.0,
-    progress_scale: float = 1.0,
-) -> np.ndarray:
-    tts_sr = TTS_SAMPLE_RATE
-    affirmation_audios = []
-    total = len(affirmations)
-    for i, aff in enumerate(affirmations):
-        audio, _ = synthesize(aff, voice=voice, speed=1.3)
-        affirmation_audios.append(audio)
-        if progress and total > 0:
-            frac = progress_offset + ((i + 1) / total) * progress_scale
-            progress(frac, desc=f"Swarm TTS: {i + 1}/{total} affirmations")
-            time.sleep(0)
-
-    swarm_at_tts_sr = generate_swarm(affirmation_audios, duration_sec, sr=tts_sr, rng=rng)
-    left = _resample_if_needed(swarm_at_tts_sr[:, 0], tts_sr, sr)
-    right = _resample_if_needed(swarm_at_tts_sr[:, 1], tts_sr, sr)
-    return np.column_stack([left, right])
 
 
 def generate_calibration_samples(voice: str) -> list[str]:
@@ -353,85 +248,64 @@ def generate_audio(
     progress: gr.Progress = gr.Progress(),
 ) -> tuple[tuple[int, np.ndarray], str, str]:
     sr = OUTPUT_SAMPLE_RATE
-    
+
     seed_val = int(seed) if seed is not None else None
-    rng = np.random.default_rng(seed_val)
-    
-    voices = list_voices()
-    if randomize_voices and len(voices) >= 2:
-        chosen = rng.choice(voices, size=2, replace=False)
-        shepherd_voice = chosen[0]
-        swarm_voice = chosen[1]
-    
-    progress(0, desc="Parsing script...")
-    time.sleep(0)
-    segments = parse_script(script_text)
-    valid, msg = validate_marking_density(segments)
-    
+
+    # Voice randomization is a UI concern — handle before delegating
+    if randomize_voices:
+        voices = list_voices()
+        if len(voices) >= 2:
+            rng_voices = np.random.default_rng(seed_val)
+            chosen = rng_voices.choice(voices, size=2, replace=False)
+            shepherd_voice = chosen[0]
+            swarm_voice = chosen[1]
+
+    # Validate affirmations (UI concern — user feedback)
     lines = [line.strip() for line in affirmations_text.splitlines() if line.strip()]
     valid_affirmations = []
     for line in lines:
         is_valid, _ = validate_affirmation(line)
         if is_valid:
             valid_affirmations.append(line)
-    
+
     if not valid_affirmations:
         valid_affirmations = ["I am calm"]
-    
-    shepherd_audio = _render_shepherd(
-        segments, shepherd_voice, sr, rng=rng,
-        progress=progress, progress_offset=0.0, progress_scale=0.6,
-    )
-    length_sec = shepherd_audio.shape[0] // sr
-    
-    if length_sec < 60:
-        min_samples = 60 * sr
-        shepherd_audio = _pad_or_trim(shepherd_audio, min_samples)
-        length_sec = 60
-    
-    swarm_audio = _render_swarm(
-        valid_affirmations, length_sec, sr, swarm_voice, rng,
-        progress=progress, progress_offset=0.6, progress_scale=0.3,
-    )
 
-    progress(0.9, desc="Generating binaural bed...")
-    time.sleep(0)
-    bed_audio = generate_bed(duration_sec=length_sec, sr=sr, rng=rng)
-    
-    target_samples = length_sec * sr
-    shepherd_audio = _pad_or_trim(shepherd_audio, target_samples)
-    swarm_audio = _pad_or_trim(swarm_audio, target_samples)
-    bed_audio = _pad_or_trim(bed_audio, target_samples)
-    
-    progress(0.95, desc="Mixing layers & applying epochs...")
-    time.sleep(0)
-    boundary_events = select_boundary_events(rng)
-    
-    custom_gains = {"swarm": subliminal_level_db}
-    
-    mixed = mix_layers(
-        shepherd=shepherd_audio,
-        swarm=swarm_audio,
-        bed=bed_audio,
-        sr=sr,
-        gain_db=custom_gains,
-        apply_epochs=True,
-        boundary_events=boundary_events,
-        rng=rng,
-    )
-    
-    progress(0.98, desc="Exporting WAV...")
-    time.sleep(0)
-    temp_dir = tempfile.gettempdir()
-    temp_path = os.path.join(temp_dir, f"hypnogen_{seed_val or 'random'}.wav")
-    write_wav(temp_path, mixed, sr)
-    
+    # Adapt gr.Progress to render_session's progress_callback protocol
+    def _progress_adapter(fraction: float, description: str) -> None:
+        progress(fraction, desc=description)
+        time.sleep(0)
+
+    # Delegate to render-core
+    with tempfile.TemporaryDirectory() as render_dir:
+        result = render_session(
+            script_text=script_text,
+            affirmations=valid_affirmations,
+            output_dir=render_dir,
+            voice=shepherd_voice,
+            swarm_voice=swarm_voice,
+            seed=seed_val,
+            length_sec=None,  # Derive from shepherd audio
+            sr=sr,
+            gain_db={"swarm": subliminal_level_db},
+            progress_callback=_progress_adapter,
+        )
+
+        # Read back the mix WAV for Gradio playback
+        mix_path = result["paths"]["mix"]
+        mixed, _ = sf.read(mix_path, dtype="float32")
+
+        # Copy to a stable temp location for download
+        temp_path = os.path.join(
+            tempfile.gettempdir(),
+            f"hypnogen_{seed_val or 'random'}.wav",
+        )
+        write_wav(temp_path, mixed, sr)
+
     audio_mono = np.mean(mixed, axis=1) if mixed.ndim == 2 else mixed
-    
-    progress(1.0, desc="Done!")
-    time.sleep(0)
+    length_sec = result["metadata"]["duration_sec"]
     info_text = f"Generated {length_sec}s session | Shepherd voice: {shepherd_voice} | Swarm voice: {swarm_voice}"
-    
+
     return (sr, audio_mono), temp_path, info_text
 
 
