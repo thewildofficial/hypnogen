@@ -20,6 +20,7 @@ from threading import Lock
 from typing import Dict
 
 import numpy as np
+import torch
 from kokoro import KPipeline
 
 
@@ -119,15 +120,12 @@ def synthesize(
     # The pipeline will download the model on first use
     pipeline = _get_pipeline(lang_code)
     
-    # Synthesize text to audio
-    # The pipeline returns a generator of results
     audio_chunks = []
-    for result in pipeline(text, voice=voice, speed=speed, split_pattern=r'\n+'):
-        # Each result may contain audio output
-        if result.output and result.output.audio is not None:
-            # Convert torch tensor to numpy array
-            audio_np = result.output.audio.cpu().numpy()
-            audio_chunks.append(audio_np)
+    with torch.inference_mode():
+        for result in pipeline(text, voice=voice, speed=speed, split_pattern=r'\n+'):
+            if result.output and result.output.audio is not None:
+                audio_np = result.output.audio.cpu().numpy()
+                audio_chunks.append(audio_np)
     
     # Concatenate all audio chunks into a single array
     if not audio_chunks:

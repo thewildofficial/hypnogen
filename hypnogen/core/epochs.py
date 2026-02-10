@@ -83,8 +83,30 @@ def generate_gain_envelope(layer: str, num_samples: int) -> np.ndarray:
     Returns:
         1D numpy array of gain multipliers, shape (num_samples,)
     """
+    if layer not in _LAYER_GAIN_PROFILES:
+        raise ValueError(f"Invalid layer: {layer}")
+
+    profile = _LAYER_GAIN_PROFILES[layer]
     positions = np.linspace(0.0, 1.0, num_samples)
-    envelope = np.array([get_layer_gain(layer, pos) for pos in positions])
+    envelope = np.empty(num_samples, dtype=np.float64)
+
+    for i in range(len(EPOCH_BOUNDARIES) - 1):
+        start_pos = EPOCH_BOUNDARIES[i]
+        end_pos = EPOCH_BOUNDARIES[i + 1]
+        start_gain, end_gain = profile[i]
+
+        is_last = (i == len(EPOCH_BOUNDARIES) - 2)
+        if is_last:
+            mask = (positions >= start_pos) & (positions <= end_pos)
+        else:
+            mask = (positions >= start_pos) & (positions < end_pos)
+
+        if end_pos > start_pos:
+            t = (positions[mask] - start_pos) / (end_pos - start_pos)
+            envelope[mask] = start_gain + t * (end_gain - start_gain)
+        else:
+            envelope[mask] = start_gain
+
     return envelope
 
 

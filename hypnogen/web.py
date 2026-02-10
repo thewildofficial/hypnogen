@@ -101,7 +101,8 @@ def _render_shepherd(
     progress_offset: float = 0.0,
     progress_scale: float = 1.0,
 ) -> np.ndarray:
-    audio_parts = []
+    tts_sr = TTS_SAMPLE_RATE
+    mono_parts: list[np.ndarray] = []
     tts_segments = [s for s in segments if s["type"] in ("text", "command", "drop_cue")]
     total_tts = len(tts_segments)
     tts_done = 0
@@ -110,9 +111,8 @@ def _render_shepherd(
         seg_type = segment["type"]
 
         if seg_type == "text":
-            audio, tts_sr = synthesize(segment["text"], voice=voice, speed=0.9)
-            audio = _resample_if_needed(audio, tts_sr, target_sr)
-            audio_parts.append(_to_stereo(audio))
+            audio, _ = synthesize(segment["text"], voice=voice, speed=0.9)
+            mono_parts.append(audio)
             tts_done += 1
             if progress and total_tts > 0:
                 frac = progress_offset + (tts_done / total_tts) * progress_scale
@@ -120,15 +120,14 @@ def _render_shepherd(
                 time.sleep(0)
 
         elif seg_type == "command":
-            audio, tts_sr = synthesize(segment["text"], voice=voice, speed=0.9)
+            audio, _ = synthesize(segment["text"], voice=voice, speed=0.9)
             pitch = segment.get("pitch", 0.0)
             rate = segment.get("rate", 1.0)
 
             if pitch != 0.0 or rate != 1.0:
                 audio = apply_analog_marking(audio, tts_sr, pitch_shift=pitch, rate=rate)
 
-            audio = _resample_if_needed(audio, tts_sr, target_sr)
-            audio_parts.append(_to_stereo(audio))
+            mono_parts.append(audio)
             tts_done += 1
             if progress and total_tts > 0:
                 frac = progress_offset + (tts_done / total_tts) * progress_scale
@@ -137,36 +136,36 @@ def _render_shepherd(
 
         elif seg_type == "pause":
             duration_ms = segment["duration_ms"]
-            pause_samples = int((duration_ms / 1000) * target_sr)
-            pause_audio = np.zeros((pause_samples, 2), dtype=np.float32)
-            audio_parts.append(pause_audio)
+            pause_samples = int((duration_ms / 1000) * tts_sr)
+            mono_parts.append(np.zeros(pause_samples, dtype=np.float32))
 
         elif seg_type == "snap":
-            snap_audio = generate_boundary_event("snap", sr=target_sr, rng=rng)
-            audio_parts.append(snap_audio.astype(np.float32))
+            snap_stereo = generate_boundary_event("snap", sr=tts_sr, rng=rng)
+            mono_parts.append(snap_stereo[:, 0].astype(np.float32))
 
         elif seg_type == "drop_cue":
             word = segment.get("word", "drop")
-            word_audio, tts_sr = synthesize(word, voice=voice, speed=0.7)
+            word_audio, _ = synthesize(word, voice=voice, speed=0.7)
             word_audio = apply_analog_marking(word_audio, tts_sr, pitch_shift=-3.0, rate=0.8)
-            word_audio = _resample_if_needed(word_audio, tts_sr, target_sr)
-            word_stereo = _to_stereo(word_audio)
-            snap_audio = generate_boundary_event("snap", sr=target_sr, rng=rng)
-            snap_padded = np.zeros_like(word_stereo)
-            snap_len = min(snap_audio.shape[0], word_stereo.shape[0])
-            snap_padded[:snap_len] = snap_audio[:snap_len] * 0.5
-            combined = word_stereo + snap_padded
-            audio_parts.append(combined.astype(np.float32))
+            snap_stereo = generate_boundary_event("snap", sr=tts_sr, rng=rng)
+            snap_mono = snap_stereo[:, 0]
+            snap_padded = np.zeros_like(word_audio)
+            snap_len = min(len(snap_mono), len(word_audio))
+            snap_padded[:snap_len] = snap_mono[:snap_len] * 0.5
+            combined = word_audio + snap_padded
+            mono_parts.append(combined.astype(np.float32))
             tts_done += 1
             if progress and total_tts > 0:
                 frac = progress_offset + (tts_done / total_tts) * progress_scale
                 progress(frac, desc=f"Shepherd TTS: {tts_done}/{total_tts} segments")
                 time.sleep(0)
 
-    if not audio_parts:
+    if not mono_parts:
         return np.zeros((1, 2), dtype=np.float32)
 
-    return np.concatenate(audio_parts, axis=0)
+    mono_concat = np.concatenate(mono_parts)
+    mono_resampled = _resample_if_needed(mono_concat, tts_sr, target_sr)
+    return _to_stereo(mono_resampled)
 
 
 def _render_swarm(
@@ -179,18 +178,21 @@ def _render_swarm(
     progress_offset: float = 0.0,
     progress_scale: float = 1.0,
 ) -> np.ndarray:
+    tts_sr = TTS_SAMPLE_RATE
     affirmation_audios = []
     total = len(affirmations)
     for i, aff in enumerate(affirmations):
-        audio, tts_sr = synthesize(aff, voice=voice, speed=1.3)
-        audio = _resample_if_needed(audio, tts_sr, sr)
+        audio, _ = synthesize(aff, voice=voice, speed=1.3)
         affirmation_audios.append(audio)
         if progress and total > 0:
             frac = progress_offset + ((i + 1) / total) * progress_scale
             progress(frac, desc=f"Swarm TTS: {i + 1}/{total} affirmations")
             time.sleep(0)
 
-    return generate_swarm(affirmation_audios, duration_sec, sr=sr, rng=rng)
+    swarm_at_tts_sr = generate_swarm(affirmation_audios, duration_sec, sr=tts_sr, rng=rng)
+    left = _resample_if_needed(swarm_at_tts_sr[:, 0], tts_sr, sr)
+    right = _resample_if_needed(swarm_at_tts_sr[:, 1], tts_sr, sr)
+    return np.column_stack([left, right])
 
 
 def generate_calibration_samples(voice: str) -> list[str]:

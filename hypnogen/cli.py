@@ -259,37 +259,37 @@ def generate(
 
 
 def _render_shepherd(segments: list, voice: str, target_sr: int) -> np.ndarray:
-    audio_parts = []
+    tts_sr = TTS_SAMPLE_RATE
+    mono_parts: list[np.ndarray] = []
 
     for segment in segments:
         seg_type = segment["type"]
 
         if seg_type == "text":
-            audio, tts_sr = synthesize(segment["text"], voice=voice, speed=0.9)
-            audio = _resample_if_needed(audio, tts_sr, target_sr)
-            audio_parts.append(_to_stereo(audio))
+            audio, _ = synthesize(segment["text"], voice=voice, speed=0.9)
+            mono_parts.append(audio)
 
         elif seg_type == "command":
-            audio, tts_sr = synthesize(segment["text"], voice=voice, speed=0.9)
+            audio, _ = synthesize(segment["text"], voice=voice, speed=0.9)
             pitch = segment.get("pitch", 0.0)
             rate = segment.get("rate", 1.0)
 
             if pitch != 0.0 or rate != 1.0:
                 audio = apply_analog_marking(audio, tts_sr, pitch_shift=pitch, rate=rate)
 
-            audio = _resample_if_needed(audio, tts_sr, target_sr)
-            audio_parts.append(_to_stereo(audio))
+            mono_parts.append(audio)
 
         elif seg_type == "pause":
             duration_ms = segment["duration_ms"]
-            pause_samples = int((duration_ms / 1000) * target_sr)
-            pause_audio = np.zeros((pause_samples, 2), dtype=np.float32)
-            audio_parts.append(pause_audio)
+            pause_samples = int((duration_ms / 1000) * tts_sr)
+            mono_parts.append(np.zeros(pause_samples, dtype=np.float32))
 
-    if not audio_parts:
+    if not mono_parts:
         return np.zeros((1, 2), dtype=np.float32)
 
-    return np.concatenate(audio_parts, axis=0)
+    mono_concat = np.concatenate(mono_parts)
+    mono_resampled = _resample_if_needed(mono_concat, tts_sr, target_sr)
+    return _to_stereo(mono_resampled)
 
 
 def _render_swarm(
@@ -299,13 +299,16 @@ def _render_swarm(
     voice: str,
     rng: np.random.Generator,
 ) -> np.ndarray:
+    tts_sr = TTS_SAMPLE_RATE
     affirmation_audios = []
     for aff in affirmations:
-        audio, tts_sr = synthesize(aff, voice=voice, speed=1.3)
-        audio = _resample_if_needed(audio, tts_sr, sr)
+        audio, _ = synthesize(aff, voice=voice, speed=1.3)
         affirmation_audios.append(audio)
 
-    return generate_swarm(affirmation_audios, duration_sec, sr=sr, rng=rng)
+    swarm_at_tts_sr = generate_swarm(affirmation_audios, duration_sec, sr=tts_sr, rng=rng)
+    left = _resample_if_needed(swarm_at_tts_sr[:, 0], tts_sr, sr)
+    right = _resample_if_needed(swarm_at_tts_sr[:, 1], tts_sr, sr)
+    return np.column_stack([left, right])
 
 
 def _resample_if_needed(audio: np.ndarray, orig_sr: int, target_sr: int) -> np.ndarray:
