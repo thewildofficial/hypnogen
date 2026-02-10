@@ -16,8 +16,13 @@ Example:
     >>> print(f"Generated {len(audio)} samples at {sr}Hz")
 """
 
+from __future__ import annotations
+
 from threading import Lock
-from typing import Dict
+from typing import TYPE_CHECKING, Dict
+
+if TYPE_CHECKING:
+    from hypnogen.core.tts_providers.base import TTSProvider
 
 import numpy as np
 import torch
@@ -135,6 +140,40 @@ def synthesize(
     audio = np.concatenate(audio_chunks)
     
     return audio, sr
+
+
+def synthesize_batch(
+    texts: list[str],
+    *,
+    provider: TTSProvider | None = None,
+    voice: str = "af_heart",
+    speed: float = 1.0,
+) -> list[tuple[np.ndarray, int]]:
+    """Synthesize a batch of texts using a TTS provider.
+
+    Convenience function that wraps the provider pattern. If no provider
+    is given, uses the default PyTorchProvider (sequential, single-process).
+
+    Args:
+        texts: List of text strings to synthesize.
+        provider: Optional TTSProvider instance. Defaults to PyTorchProvider.
+        voice: Voice ID (default: "af_heart").
+        speed: Speech speed multiplier (default: 1.0).
+
+    Returns:
+        List of (audio_array, sample_rate) tuples in input order.
+
+    Example:
+        >>> from hypnogen.core.tts_providers import get_provider
+        >>> provider = get_provider("multiprocess", num_workers=3)
+        >>> results = synthesize_batch(["Hello", "World"], provider=provider)
+        >>> provider.shutdown()
+    """
+    if provider is None:
+        from hypnogen.core.tts_providers.pytorch import PyTorchProvider
+        provider = PyTorchProvider()
+
+    return provider.synthesize_batch(texts, voice=voice, speed=speed)
 
 
 def list_voices() -> list[str]:
