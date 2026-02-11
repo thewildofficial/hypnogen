@@ -177,20 +177,20 @@ struct CalibrationSettingsView: View {
                 let level = CalibrationLevels.level(forGainDb: result.gainDb)
                 LabeledContent("Current Level:") {
                     Text(level.map { "\($0.label) (\(Int($0.gainDb)) dB)" } ?? "\(Int(result.gainDb)) dB")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.textSecondary)
                 }
                 LabeledContent("Calibrated:") {
                     Text(result.completedAt.formatted(date: .abbreviated, time: .shortened))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.textSecondary)
                 }
                 if result.wasSkipped {
                     Text("Calibration was skipped (using default level).")
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color.textSecondary)
                 }
             } else {
                 Text("No calibration data. Run calibration to set your subliminal level.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             Button("Recalibrate") {

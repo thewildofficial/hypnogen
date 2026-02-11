@@ -16,6 +16,7 @@ struct RenderQueueView: View {
                 jobsList
             }
         }
+        .background(Color.canvas)
         .navigationTitle("Render Queue")
         .accessibilityIdentifier(Constants.Accessibility.renderQueueList)
     }
@@ -46,6 +47,8 @@ struct RenderQueueView: View {
             }
         }
         .listStyle(.inset(alternatesRowBackgrounds: true))
+        .scrollContentBackground(.hidden)
+        .background(Color.canvas)
     }
 
     // MARK: - Empty State
@@ -54,15 +57,16 @@ struct RenderQueueView: View {
         VStack(spacing: 12) {
             Image(systemName: "list.bullet.clipboard")
                 .font(.system(size: 48))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.textSecondary)
             Text("No Render Jobs")
                 .font(.title3)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
             Text("Open a project and click Render to start")
                 .font(.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.canvas)
     }
 }
 
@@ -81,7 +85,7 @@ struct RenderJobRowView: View {
                         .font(.headline)
                     Text(job.submittedAt.formatted(date: .abbreviated, time: .shortened))
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.textSecondary)
                 }
                 Spacer()
                 if let onCancel, !job.isTerminal {
@@ -99,7 +103,7 @@ struct RenderJobRowView: View {
             if let error = job.error, job.status == .failed {
                 Text(error)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color.red)
                     .lineLimit(2)
             }
         }
@@ -117,18 +121,18 @@ struct RenderJobRowView: View {
                 if let stage = job.stage {
                     Text(stage)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.textSecondary)
                 }
                 Spacer()
                 if !job.etaDisplay.isEmpty {
                     Text(job.etaDisplay)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.textSecondary)
                         .monospacedDigit()
                 }
                 Text("\(Int(job.progress * 100))%")
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
         }
     }
@@ -140,19 +144,19 @@ struct RenderJobRowView: View {
             switch job.status {
             case .pending:
                 Image(systemName: "clock")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.orange)
             case .running:
                 Image(systemName: "play.circle.fill")
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(Color.blue)
             case .completed:
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color.green)
             case .failed:
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color.red)
             case .cancelled:
                 Image(systemName: "slash.circle")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
         }
         .font(.title2)

@@ -95,6 +95,8 @@ struct ContentView: View {
             }
         }
         .listStyle(.sidebar)
+        .scrollContentBackground(.hidden)
+        .background(Color.canvas)
         .navigationSplitViewColumnWidth(min: 200, ideal: 250, max: 350)
         .accessibilityIdentifier(Constants.Accessibility.projectsList)
     }
@@ -133,10 +135,10 @@ struct ContentView: View {
         VStack(spacing: 16) {
             Image(systemName: "waveform.circle")
                 .font(.system(size: 64))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.textSecondary)
             Text("Select or create a project to get started")
                 .font(.title2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
             Button("New Project") {
                 projectsViewModel.createProject()
             }
@@ -144,6 +146,7 @@ struct ContentView: View {
             .accessibilityIdentifier(Constants.Accessibility.newProjectButton)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.canvas)
     }
 }
 
@@ -159,7 +162,7 @@ struct ProjectRowView: View {
                 .lineLimit(1)
             Text(project.modifiedAt.formatted(date: .abbreviated, time: .shortened))
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
         }
         .padding(.vertical, 2)
     }

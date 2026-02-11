@@ -15,6 +15,7 @@ struct TipsGlossaryView: View {
             }
             .padding(24)
         }
+        .background(Color.canvas)
         .accessibilityIdentifier(Constants.Accessibility.Onboarding.tipsGlossaryContainer)
     }
 
@@ -65,7 +66,7 @@ struct TipCardView: View {
             HStack(spacing: 8) {
                 Image(systemName: tip.sfSymbol)
                     .font(.title3)
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(Color.accentPrimary)
                     .frame(width: 24)
                 Text(tip.title)
                     .font(.headline)
@@ -73,12 +74,12 @@ struct TipCardView: View {
 
             Text(tip.body)
                 .font(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
                 .lineSpacing(2)
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary.opacity(0.5))
+        .background(Color.surface.opacity(0.5))
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
@@ -94,7 +95,7 @@ struct GlossaryRowView: View {
         DisclosureGroup(isExpanded: $isExpanded) {
             Text(entry.definition)
                 .font(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
                 .lineSpacing(2)
                 .padding(.top, 4)
         } label: {

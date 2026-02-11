@@ -22,6 +22,7 @@ struct OutputsLibraryView: View {
                 outputsGrid
             }
         }
+        .background(Color.canvas)
         .navigationTitle("Outputs Library")
         .accessibilityIdentifier(Constants.Accessibility.outputsGrid)
     }
@@ -50,15 +51,16 @@ struct OutputsLibraryView: View {
         VStack(spacing: 12) {
             Image(systemName: "music.note.list")
                 .font(.system(size: 48))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.textSecondary)
             Text("No Outputs")
                 .font(.title3)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textPrimary)
             Text("Completed renders will appear here")
                 .font(.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.canvas)
     }
 }
 
@@ -72,12 +74,12 @@ struct OutputCardView: View {
         VStack(alignment: .leading, spacing: 8) {
             // Waveform placeholder
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: .controlBackgroundColor))
+                .fill(Color.surface)
                 .frame(height: 80)
                 .overlay {
                     Image(systemName: "waveform")
                         .font(.title)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color.textSecondary)
                 }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -87,7 +89,7 @@ struct OutputCardView: View {
 
                 Text(output.completedAtFormatted)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             HStack(spacing: 8) {
@@ -111,7 +113,7 @@ struct OutputCardView: View {
             }
         }
         .padding(12)
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(Color.surface)
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
     }

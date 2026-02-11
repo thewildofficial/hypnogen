@@ -21,6 +21,7 @@ struct CalibrationView: View {
                     .padding(.vertical, 12)
             }
         }
+        .background(Color.canvas)
         .frame(width: 520, height: 420)
         .accessibilityIdentifier(Constants.Accessibility.Calibration.calibrationView)
     }
@@ -49,7 +50,7 @@ struct CalibrationView: View {
 
             Image(systemName: "ear.and.waveform")
                 .font(.system(size: 48))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.accentPrimary)
 
             Text("Audibility Calibration")
                 .font(.title)
@@ -57,13 +58,13 @@ struct CalibrationView: View {
 
             Text("We\u{2019}ll play short audio samples at different volume levels. For each one, tell us if you can hear the words clearly.")
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 380)
 
             Text("This helps Hypnogen set the right subliminal volume for your listening environment.")
                 .font(.callout)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.textSecondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 380)
 
@@ -120,7 +121,7 @@ struct CalibrationView: View {
                 Spacer()
                 Text("\(Int(viewModel.progress * 100))%")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             ProgressView(value: viewModel.progress)
@@ -137,11 +138,11 @@ struct CalibrationView: View {
 
             Text(level.description)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
 
             Text("\(Int(level.gainDb)) dB")
                 .font(.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.textSecondary)
                 .monospaced()
         }
     }
@@ -173,7 +174,7 @@ struct CalibrationView: View {
             if let error = viewModel.playbackError {
                 Text(error)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color.red)
             }
 
             HStack(spacing: 16) {
@@ -208,7 +209,7 @@ struct CalibrationView: View {
 
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 48))
-                .foregroundStyle(.green)
+                .foregroundStyle(Color.green)
 
             Text("Calibration Complete")
                 .font(.title)
@@ -218,22 +219,22 @@ struct CalibrationView: View {
                 VStack(spacing: 4) {
                     Text("Your optimal subliminal level:")
                         .font(.body)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.textSecondary)
 
                     Text("\(level.label) (\(Int(level.gainDb)) dB)")
                         .font(.title3)
                         .fontWeight(.medium)
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(Color.accentPrimary)
 
                     Text(level.description)
                         .font(.callout)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color.textSecondary)
                 }
             }
 
             Text("You can recalibrate anytime from Settings.")
                 .font(.callout)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.textSecondary)
 
             Spacer()
 
@@ -265,7 +266,7 @@ struct CalibrationView: View {
             if viewModel.phase == .welcome {
                 Text("Uses default level if skipped")
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Color.textSecondary)
             }
         }
     }

@@ -25,7 +25,7 @@ struct WorkerStatusView: View {
 
             Text(viewModel.statusDescription)
                 .font(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
 
             Group {
                 if let port = viewModel.port {
@@ -40,7 +40,7 @@ struct WorkerStatusView: View {
                     LabeledContent("Python") {
                         Text(pythonExecutablePath)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.textSecondary)
                             .lineLimit(1)
                             .truncationMode(.middle)
                             .textSelection(.enabled)
@@ -73,11 +73,11 @@ struct WorkerStatusView: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(.background)
+                .fill(Color.surface)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(.quaternary)
+                .stroke(Color.stroke)
         )
     }
 
@@ -97,13 +97,13 @@ struct WorkerStatusView: View {
     private var stateColor: Color {
         switch viewModel.state {
         case .stopped:
-            return .secondary
+            return Color.textSecondary
         case .starting, .warmingUp:
-            return .orange
+            return Color.orange
         case .ready:
-            return .green
+            return Color.green
         case .error:
-            return .red
+            return Color.red
         }
     }
 }

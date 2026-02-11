@@ -19,6 +19,7 @@ struct TroubleshootingView: View {
             }
             .padding(24)
         }
+        .background(Color.canvas)
         .accessibilityIdentifier(Constants.Accessibility.Onboarding.troubleshootingContainer)
     }
 
@@ -30,7 +31,7 @@ struct TroubleshootingView: View {
 
             Text("Common issues and how to fix them.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
         }
     }
 }
@@ -53,14 +54,14 @@ struct TroubleshootingCardView: View {
             HStack(spacing: 10) {
                 Image(systemName: entry.sfSymbol)
                     .font(.title3)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.orange)
                     .frame(width: 24)
                 Text(entry.problem)
                     .font(.headline)
             }
         }
         .padding(12)
-        .background(.quaternary.opacity(0.3))
+        .background(Color.surface.opacity(0.3))
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
@@ -72,7 +73,7 @@ struct TroubleshootingCardView: View {
                 .frame(width: 44, alignment: .leading)
             Text(entry.cause)
                 .font(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
         }
     }
 
@@ -84,7 +85,7 @@ struct TroubleshootingCardView: View {
                 .frame(width: 44, alignment: .leading)
             Text(entry.solution)
                 .font(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
                 .lineSpacing(2)
         }
     }

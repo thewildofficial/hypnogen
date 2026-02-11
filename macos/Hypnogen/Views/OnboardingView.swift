@@ -26,6 +26,7 @@ struct OnboardingView: View {
                 .padding(.horizontal, 24)
                 .padding(.vertical, 12)
         }
+        .background(Color.canvas)
         .frame(width: 600, height: 520)
         .accessibilityIdentifier(Constants.Accessibility.Onboarding.onboardingView)
     }

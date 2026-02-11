@@ -17,6 +17,7 @@ struct FeatureTourView: View {
             navigationButtons
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.canvas)
         .accessibilityIdentifier(Constants.Accessibility.Onboarding.featureTourContainer)
     }
 
@@ -29,7 +30,7 @@ struct FeatureTourView: View {
         VStack(spacing: 16) {
             Image(systemName: page.sfSymbol)
                 .font(.system(size: 56))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.accentPrimary)
                 .symbolRenderingMode(.hierarchical)
                 .accessibilityHidden(true)
 
@@ -40,12 +41,12 @@ struct FeatureTourView: View {
 
             Text(page.subtitle)
                 .font(.title3)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
                 .multilineTextAlignment(.center)
 
             Text(page.body)
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
                 .frame(maxWidth: 420)
@@ -64,7 +65,7 @@ struct FeatureTourView: View {
         HStack(spacing: 8) {
             ForEach(0..<viewModel.tourPageCount, id: \.self) { index in
                 Circle()
-                    .fill(index == viewModel.currentTourPage ? Color.accentColor : Color.secondary.opacity(0.3))
+                    .fill(index == viewModel.currentTourPage ? Color.accentPrimary : Color.textSecondary.opacity(0.3))
                     .frame(width: 8, height: 8)
                     .animation(.easeInOut(duration: 0.2), value: viewModel.currentTourPage)
             }

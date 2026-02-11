@@ -19,6 +19,7 @@ struct ProjectsView: View {
                 projectList
             }
         }
+        .background(Color.canvas)
         .frame(minWidth: 300, minHeight: 200)
     }
 
@@ -61,6 +62,8 @@ struct ProjectsView: View {
             }
         }
         .listStyle(.sidebar)
+        .scrollContentBackground(.hidden)
+        .background(Color.canvas)
         .accessibilityIdentifier(Constants.Accessibility.projectsList)
     }
 
@@ -70,14 +73,15 @@ struct ProjectsView: View {
         VStack(spacing: 12) {
             Image(systemName: "doc.badge.plus")
                 .font(.system(size: 40))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.textSecondary)
             Text("No Projects")
                 .font(.title3)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
             Text("Create your first hypnosis project")
                 .font(.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.canvas)
     }
 }
