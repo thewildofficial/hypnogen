@@ -710,12 +710,14 @@ class CoreMLProvider(TTSProvider):
             raise RuntimeError("Duration model is not initialized.")
 
         t0 = time.perf_counter()
+        logger.info("[CoreML] Starting synthesis segment, phonemes_len=%d", len(phonemes))
 
         input_ids, attention_mask, valid_tokens = self._prepare_duration_inputs(
             phonemes=phonemes,
             vocab=vocab,
             token_limit=self._duration_spec.token_limit,
         )
+        logger.info("[CoreML] Prepared duration inputs, valid_tokens=%d", valid_tokens)
 
         duration_inputs = {
             self._duration_spec.input_ids_name: input_ids,
@@ -725,11 +727,13 @@ class CoreMLProvider(TTSProvider):
         }
 
         t_dur = time.perf_counter()
+        logger.info("[CoreML] Running duration model prediction...")
         try:
             duration_outputs = self._duration_model.predict(duration_inputs)
         except Exception as exc:
             raise RuntimeError("CoreML duration inference failed.") from exc
         t_dur_done = time.perf_counter()
+        logger.info("[CoreML] Duration model done in %.3fs", t_dur_done - t_dur)
 
         pred_dur = self._as_feature_tensor(duration_outputs[self._duration_spec.pred_dur_name]).astype(np.float32)
         t_en = self._canon_t_en(self._as_feature_tensor(duration_outputs[self._duration_spec.t_en_name]))
@@ -751,18 +755,22 @@ class CoreMLProvider(TTSProvider):
         asr = np.matmul(t_en[:, :, :token_count], alignment).astype(np.float32)
         asr = self._fit_asr_to_shape(asr, decoder_spec)
         t_align_done = time.perf_counter()
+        logger.info("[CoreML] Alignment computed, asr_shape=%s", asr.shape)
 
         t_f0 = time.perf_counter()
         if self._ensure_pytorch_predictor():
+            logger.info("[CoreML] Computing F0/N using F0Ntrain...")
             f0_pred, n_pred = self._compute_f0_n_f0ntrain(
                 duration_outputs, alignment, token_count, ref_s,
             )
         else:
+            logger.info("[CoreML] Computing F0/N using energy heuristic...")
             f0_pred, n_pred = self._derive_f0_n(
                 asr.reshape(1, decoder_spec.asr_channels, decoder_spec.asr_frames),
                 decoder_spec.f0_frames,
             )
         t_f0_done = time.perf_counter()
+        logger.info("[CoreML] F0/N computation done in %.3fs", t_f0_done - t_f0)
 
         f0_pred = self._fit_curve_to_shape(f0_pred, decoder_spec.f0_shape)
         n_pred = self._fit_curve_to_shape(n_pred, decoder_spec.n_shape)
@@ -776,6 +784,7 @@ class CoreMLProvider(TTSProvider):
         }
 
         t_dec = time.perf_counter()
+        logger.info("[CoreML] Running decoder model prediction (bucket=%s)...", decoder_spec.bucket_name)
         try:
             decoder_outputs = decoder_model.predict(decoder_inputs)
         except Exception as exc:
@@ -783,12 +792,15 @@ class CoreMLProvider(TTSProvider):
                 f"CoreML decoder inference failed for bucket {decoder_spec.bucket_name}."
             ) from exc
         t_dec_done = time.perf_counter()
+        logger.info("[CoreML] Decoder model done in %.3fs", t_dec_done - t_dec)
 
         waveform = self._as_feature_tensor(decoder_outputs[decoder_spec.waveform_name]).astype(np.float32).reshape(-1)
 
         target_samples = int(round(predicted_seconds * SAMPLE_RATE))
         if target_samples > 0:
             waveform = waveform[: min(target_samples, waveform.shape[0])]
+
+        logger.info("[CoreML] Synthesis segment complete, total_time=%.3fs, waveform_samples=%d", time.perf_counter() - t0, waveform.shape[0])
 
         logger.debug(
             "Segment timing: duration=%.3fs align=%.3fs f0n=%.3fs decoder=%.3fs total=%.3fs",
