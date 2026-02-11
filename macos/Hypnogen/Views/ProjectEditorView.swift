@@ -17,10 +17,13 @@ struct ProjectEditorView: View {
         HSplitView {
             scriptPanel
                 .frame(minWidth: 300)
+                .background(Color.canvas)
 
             affirmationsPanel
                 .frame(minWidth: 250, maxWidth: 400)
+                .background(Color.surface)
         }
+        .background(Color.canvas)
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {
@@ -36,7 +39,7 @@ struct ProjectEditorView: View {
                 Button(action: onRender) {
                     Label("Render", systemImage: "waveform")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(PrimaryButtonStyle())
                 .accessibilityIdentifier(Constants.Accessibility.renderButton)
                 .disabled(project.scriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                           || project.affirmations.filter({ !$0.isEmpty }).isEmpty)
@@ -55,6 +58,7 @@ struct ProjectEditorView: View {
                 TextField("Project Name", text: $project.name)
                     .textFieldStyle(.plain)
                     .font(.title2.bold())
+                    .foregroundColor(.textPrimary)
                     .accessibilityIdentifier(Constants.Accessibility.projectNameField)
                     .onChange(of: project.name) { _, _ in onSave() }
             }
@@ -63,19 +67,25 @@ struct ProjectEditorView: View {
 
             Text("Script")
                 .font(.headline)
-                .foregroundStyle(.secondary)
+                .foregroundColor(.textSecondary)
                 .padding(.horizontal)
 
             TextEditor(text: $project.scriptText)
                 .font(.body.monospaced())
+                .foregroundColor(.textPrimary)
                 .scrollContentBackground(.hidden)
                 .padding(8)
-                .background(Color(nsColor: .textBackgroundColor))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .background(Color.surface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Radius.md)
+                        .stroke(Color.stroke, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: Radius.md))
                 .padding(.horizontal)
                 .padding(.bottom, 12)
                 .accessibilityIdentifier(Constants.Accessibility.scriptEditor)
         }
+        .background(Color.canvas)
     }
 
     // MARK: - Affirmations Panel
@@ -85,11 +95,11 @@ struct ProjectEditorView: View {
             HStack {
                 Text("Affirmations")
                     .font(.headline)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(.textSecondary)
                 Spacer()
                 Text("\(nonEmptyAffirmationCount)")
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundColor(.textSecondary)
                     .monospacedDigit()
             }
             .padding(.horizontal)
@@ -106,20 +116,23 @@ struct ProjectEditorView: View {
                             )
                         )
                         .textFieldStyle(.plain)
+                        .foregroundColor(.textPrimary)
                         .accessibilityIdentifier("\(Constants.Accessibility.affirmationField)_\(index)")
 
                         Button {
                             removeAffirmation(at: index)
                         } label: {
                             Image(systemName: "minus.circle.fill")
-                                .foregroundStyle(.secondary)
+                                .foregroundColor(.textSecondary)
                         }
                         .buttonStyle(.borderless)
                         .accessibilityIdentifier("\(Constants.Accessibility.removeAffirmationButton)_\(index)")
                     }
+                    .listRowBackground(Color.surface)
                 }
             }
             .listStyle(.plain)
+            .background(Color.surface)
             .accessibilityIdentifier(Constants.Accessibility.affirmationsList)
 
             HStack {
@@ -131,6 +144,7 @@ struct ProjectEditorView: View {
                     addAffirmation()
                 } label: {
                     Image(systemName: "plus.circle.fill")
+                        .foregroundColor(.accentPrimary)
                 }
                 .buttonStyle(.borderless)
                 .disabled(newAffirmation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -139,6 +153,7 @@ struct ProjectEditorView: View {
             .padding(.horizontal)
             .padding(.bottom, 12)
         }
+        .background(Color.surface)
     }
 
     // MARK: - Settings Popover

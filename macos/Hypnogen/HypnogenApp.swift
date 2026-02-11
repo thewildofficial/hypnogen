@@ -37,6 +37,8 @@ struct HypnogenApp: App {
             .sheet(isPresented: $calibrationViewModel.isPresented) {
                 CalibrationView(viewModel: calibrationViewModel)
             }
+            .preferredColorScheme(.dark)
+            .background(Color.canvas)
         }
         .windowToolbarStyle(.unified)
         .defaultSize(width: 1100, height: 700)
