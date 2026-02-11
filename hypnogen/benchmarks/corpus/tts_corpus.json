@@ -1,0 +1,58 @@
+{
+  "version": "1.0",
+  "description": "Anonymized TTS benchmark corpus for hypnosis content",
+  "created_at": "2026-02-11",
+  "cases": [
+    {
+      "case_id": "short_relaxation",
+      "script_text": "Welcome to this brief moment of calm. As you <cmd>settle into comfort</cmd>, you may notice your breathing naturally slowing down. Each breath you take can guide you deeper into a state of peaceful awareness. <pause duration='2000ms'/> You don't need to try hard—simply allow yourself to <cmd>relax completely</cmd> as you listen to the sounds around you. Your mind is free to drift, and with each word, you may find yourself feeling more at ease. <snap/> That's right. Drifting and relaxing.",
+      "affirmations": [
+        "I am calm and centered",
+        "You deserve peace and relaxation",
+        "Peace flows through me naturally",
+        "I release tension with every breath",
+        "You are safe and supported",
+        "Calmness is my natural state",
+        "I allow myself to unwind completely",
+        "You choose tranquility in every moment"
+      ],
+      "notes": "Short relaxation script (~180 words) with embedded commands and pause"
+    },
+    {
+      "case_id": "medium_confidence",
+      "script_text": "Today you're going to discover something remarkable about your own inner strength. As you sit here, breathing normally, you can begin to notice how <cmd>confidence grows within you</cmd>. You might remember a time when you felt truly capable—perhaps it was yesterday, perhaps years ago—and that feeling can return to you now. <pause duration='3000ms'/> With every breath, you can <cmd>embrace your power</cmd> more fully. You don't need to force anything. Simply allow the certainty that you are enough, that you have always been enough, to settle into your awareness. <snap/> Feel that certainty now. When you speak, your words carry weight. When you act, your actions align with your values. You trust yourself to handle whatever comes your way. <cmd>You are capable and confident</cmd>, and this truth becomes more obvious to you with each passing moment. Take this feeling with you as you move through your day.",
+      "affirmations": [
+        "I trust myself completely",
+        "You are capable of amazing things",
+        "Confidence radiates from within me",
+        "I speak with clarity and conviction",
+        "You handle challenges with grace",
+        "My inner strength guides me always",
+        "I deserve success and achievement",
+        "You grow more confident every day",
+        "I am worthy of respect and recognition",
+        "You create positive outcomes effortlessly"
+      ],
+      "notes": "Medium confidence-building script (~250 words) with mixed affirmations"
+    },
+    {
+      "case_id": "long_sleep",
+      "script_text": "As the day comes to a close, you can allow yourself the gift of deep, restorative sleep. Find a comfortable position and let your eyes gently close. As you breathe in... and out... you may already feel the first hints of drowsiness washing over you. That's perfectly natural. <pause duration='2000ms'/> Now, as you continue to breathe easily, I want you to imagine a staircase before you. It has ten steps, and with each step you take, you can <cmd>drift deeper into sleep</cmd>. Ten... feeling calm and peaceful. Nine... your body becoming heavier and more relaxed. Eight... <cmd>sleep comes easily to you</cmd>. Seven... drifting deeper now. Six... your mind is quieting. Five... half way there, and already feeling so sleepy. Four... relaxation spreading through every muscle. Three... <drop>deeper and deeper</drop>. Two... almost there now. One... <snap/> <drop>sleep</drop>. That's right. Your subconscious mind remains aware and receptive as your body rests completely. <pause duration='4000ms'/> Throughout the night, you can sleep soundly, waking refreshed and energized. Your dreams may be pleasant and meaningful. When morning comes, you'll feel renewed and ready for the day ahead. Sleep now, and sleep well.",
+      "affirmations": [
+        "I fall asleep easily and naturally",
+        "You sleep deeply through the night",
+        "My body knows how to rest completely",
+        "I wake up refreshed and energized",
+        "You deserve peaceful, restorative sleep",
+        "Sleep comes to me effortlessly",
+        "My dreams are pleasant and healing",
+        "I release the day and welcome rest",
+        "You trust your body's sleep wisdom",
+        "I am safe and protected while sleeping",
+        "Each breath guides me deeper into sleep",
+        "You choose rest and rejuvenation now"
+      ],
+      "notes": "Long sleep induction script (~380 words) with countdown technique and mixed I/You/Reality affirmations"
+    }
+  ]
+}

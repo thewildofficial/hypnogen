@@ -49,7 +49,7 @@ struct CalibrationView: View {
 
             Image(systemName: "ear.and.waveform")
                 .font(.system(size: 48))
-                .foregroundStyle(.accent)
+                .foregroundStyle(Color.accentColor)
 
             Text("Audibility Calibration")
                 .font(.title)
@@ -115,7 +115,7 @@ struct CalibrationView: View {
     private var progressHeader: some View {
         VStack(spacing: 8) {
             HStack {
-                Text("Level \((viewModel.currentLevelIndex ?? 0) + 1) of \(viewModel.totalLevels)")
+                Text("Level \(viewModel.currentLevelIndex! + 1) of \(viewModel.totalLevels)")
                     .font(.headline)
                 Spacer()
                 Text("\(Int(viewModel.progress * 100))%")
@@ -223,7 +223,7 @@ struct CalibrationView: View {
                     Text("\(level.label) (\(Int(level.gainDb)) dB)")
                         .font(.title3)
                         .fontWeight(.medium)
-                        .foregroundStyle(.accent)
+                        .foregroundStyle(Color.accentColor)
 
                     Text(level.description)
                         .font(.callout)

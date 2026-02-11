@@ -65,7 +65,7 @@ struct TipCardView: View {
             HStack(spacing: 8) {
                 Image(systemName: tip.sfSymbol)
                     .font(.title3)
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(Color.accentColor)
                     .frame(width: 24)
                 Text(tip.title)
                     .font(.headline)

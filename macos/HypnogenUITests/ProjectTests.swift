@@ -22,7 +22,7 @@ final class ProjectTests: HypnogenUITestCase {
 
         // A project name field should appear in the editor
         let nameField = app.textFields["projectNameField"]
-        waitForElement(nameField, Self.defaultTimeout, "Project name field should appear after creating a project")
+        waitForElement(nameField, timeout: Self.defaultTimeout, "Project name field should appear after creating a project")
 
         // Default name should be "Untitled Project"
         let fieldValue = nameField.value as? String ?? ""

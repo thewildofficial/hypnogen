@@ -29,7 +29,7 @@ struct FeatureTourView: View {
         VStack(spacing: 16) {
             Image(systemName: page.sfSymbol)
                 .font(.system(size: 56))
-                .foregroundStyle(.accent)
+                .foregroundStyle(Color.accentColor)
                 .symbolRenderingMode(.hierarchical)
                 .accessibilityHidden(true)
 

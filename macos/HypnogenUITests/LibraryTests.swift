@@ -30,7 +30,7 @@ final class LibraryTests: HypnogenUITestCase {
 
         // Verify the outputs grid view loads
         let outputsGrid = app.otherElements["outputsGrid"]
-        waitForElement(outputsGrid, Self.defaultTimeout, "Outputs library view should appear")
+        waitForElement(outputsGrid, timeout: Self.defaultTimeout, "Outputs library view should appear")
     }
 
     func testOutputsLibraryDisplaysEmptyOrPopulated() {

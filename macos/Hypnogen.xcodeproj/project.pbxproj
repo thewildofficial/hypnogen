@@ -31,6 +31,9 @@
 		A100000022 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000022; };
 		A100000023 /* CalibrationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000023; };
 		A100000024 /* CalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000024; };
+		A100000025 /* WorkerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000025; };
+		A100000026 /* WorkerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000026; };
+		A100000027 /* WorkerStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000027; };
 		A200000001 /* HypnogenUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000001; };
 		A200000002 /* ScreenshotHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000002; };
 		A200000003 /* OnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000003; };
@@ -74,6 +77,9 @@
 		B100000022 /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		B100000023 /* CalibrationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationViewModel.swift; sourceTree = "<group>"; };
 		B100000024 /* CalibrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationView.swift; sourceTree = "<group>"; };
+		B100000025 /* WorkerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerManager.swift; sourceTree = "<group>"; };
+		B100000026 /* WorkerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerViewModel.swift; sourceTree = "<group>"; };
+		B100000027 /* WorkerStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerStatusView.swift; sourceTree = "<group>"; };
 		B200000001 /* HypnogenUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HypnogenUITests.swift; sourceTree = "<group>"; };
 		B200000002 /* ScreenshotHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotHelper.swift; sourceTree = "<group>"; };
 		B200000003 /* OnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingTests.swift; sourceTree = "<group>"; };
@@ -142,6 +148,7 @@
 				B100000006 /* APIClient.swift */,
 				B100000007 /* ProjectStore.swift */,
 				B100000022 /* AudioPlayer.swift */,
+				B100000025 /* WorkerManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -154,6 +161,7 @@
 				B100000010 /* OutputsLibraryViewModel.swift */,
 				B100000015 /* OnboardingViewModel.swift */,
 				B100000023 /* CalibrationViewModel.swift */,
+				B100000026 /* WorkerViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -170,6 +178,7 @@
 				B100000019 /* TipsGlossaryView.swift */,
 				B100000020 /* TroubleshootingView.swift */,
 				B100000024 /* CalibrationView.swift */,
+				B100000027 /* WorkerStatusView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -326,6 +335,9 @@
 				A100000022 /* AudioPlayer.swift in Sources */,
 				A100000023 /* CalibrationViewModel.swift in Sources */,
 				A100000024 /* CalibrationView.swift in Sources */,
+				A100000025 /* WorkerManager.swift in Sources */,
+				A100000026 /* WorkerViewModel.swift in Sources */,
+				A100000027 /* WorkerStatusView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

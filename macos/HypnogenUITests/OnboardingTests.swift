@@ -37,7 +37,7 @@ final class OnboardingTests: HypnogenUITestCase {
 
         // Main sidebar should appear
         let sidebar = app.otherElements["sidebar"]
-        waitForElement(sidebar, Self.defaultTimeout, "Sidebar should appear after onboarding skip")
+        waitForElement(sidebar, timeout: Self.defaultTimeout, "Sidebar should appear after onboarding skip")
     }
 
     func testDoneButtonDismissesOnboarding() {
@@ -52,7 +52,7 @@ final class OnboardingTests: HypnogenUITestCase {
         XCTAssertTrue(dismissed, "Onboarding should be dismissed after Done")
 
         let sidebar = app.otherElements["sidebar"]
-        waitForElement(sidebar, Self.defaultTimeout, "Sidebar should appear after onboarding Done")
+        waitForElement(sidebar, timeout: Self.defaultTimeout, "Sidebar should appear after onboarding Done")
     }
 
     func testDontShowAgainPreventsReappearance() {

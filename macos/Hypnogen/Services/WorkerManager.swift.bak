@@ -1,0 +1,530 @@
+// WorkerManager.swift
+// Hypnogen
+//
+// Launches and monitors the local Python FastAPI worker process.
+
+import Foundation
+import Observation
+import Darwin
+
+/// Runtime lifecycle for the local render worker process.
+enum WorkerState: Equatable {
+    case stopped
+    case starting
+    case warmingUp
+    case ready
+    case error(String)
+}
+
+/// Errors that can occur while launching or monitoring the worker process.
+enum WorkerManagerError: LocalizedError {
+    case pythonNotFound
+    case workerModuleNotFound
+    case launchFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .pythonNotFound:
+            return "Python executable was not found. Install Python 3 and ensure it is on PATH."
+        case .workerModuleNotFound:
+            return "Could not locate the repository root for `hypnogen.api.app`."
+        case .launchFailed(let detail):
+            return "Failed to launch worker: \(detail)"
+        }
+    }
+}
+
+@MainActor
+@Observable
+final class WorkerManager {
+    private enum Configuration {
+        static let workerHostKey = "workerHost"
+        static let workerPortKey = "workerPort"
+        static let workerPortEnvKey = "HYPNOGEN_PORT"
+        static let repoRootEnvKey = "HYPNOGEN_REPO_ROOT"
+
+        static let envExecutable = "/usr/bin/env"
+        static let whichCommand = "which"
+        static let pythonModuleFlag = "-m"
+        static let workerModule = "hypnogen.api.app"
+
+        static let healthPath = "/health"
+        static let healthyStatus = "ok"
+        static let healthRequestTimeoutSeconds: TimeInterval = 1.5
+        static let healthPollIntervalNanoseconds: UInt64 = 1_000_000_000
+        static let startupTimeoutNanoseconds: UInt64 = 45_000_000_000
+
+        static let terminationGraceSeconds: TimeInterval = 2.0
+        static let terminationPollNanoseconds: UInt64 = 100_000_000
+
+        static let maxRecentLogLines = 50
+        static let maxDirectoryAscents = 12
+
+        static let pythonCommandCandidates = ["python3", "python"]
+        static let pythonPathCandidates = [
+            "/opt/homebrew/bin/python3",
+            "/usr/local/bin/python3",
+            "/usr/bin/python3"
+        ]
+    }
+
+    private struct HealthResponse: Decodable {
+        let status: String
+    }
+
+    // MARK: - Observable state
+
+    private(set) var state: WorkerState = .stopped
+    private(set) var activePort: Int?
+    private(set) var pythonExecutablePath: String?
+    private(set) var lastOutputLine: String?
+    private(set) var lastErrorMessage: String?
+    private(set) var recentLogs: [String] = []
+
+    var isRunning: Bool {
+        process?.isRunning == true
+    }
+
+    // MARK: - Runtime internals
+
+    private var process: Process?
+    private var stdoutPipe: Pipe?
+    private var stderrPipe: Pipe?
+    private var stdoutBuffer = Data()
+    private var stderrBuffer = Data()
+
+    private var healthPollTask: Task<Void, Never>?
+    private var startupTimeoutTask: Task<Void, Never>?
+    private var stopRequested = false
+
+    // MARK: - Public lifecycle
+
+    /// Start `python -m hypnogen.api.app` and begin health monitoring.
+    func start() async {
+        guard !isRunning else { return }
+        guard !isTransitionalState else { return }
+
+        stopRequested = false
+        lastErrorMessage = nil
+        state = .starting
+
+        do {
+            let pythonPath = try findPythonExecutable()
+            let workingDirectory = try resolveWorkingDirectory()
+            let configuredHost = configuredWorkerHost()
+            let configuredPort = configuredWorkerPort()
+
+            let newProcess = Process()
+            let stdoutPipe = Pipe()
+            let stderrPipe = Pipe()
+
+            newProcess.executableURL = URL(fileURLWithPath: pythonPath)
+            newProcess.arguments = [Configuration.pythonModuleFlag, Configuration.workerModule]
+            newProcess.currentDirectoryURL = workingDirectory
+            newProcess.environment = workerEnvironment(port: configuredPort)
+            newProcess.standardOutput = stdoutPipe
+            newProcess.standardError = stderrPipe
+            newProcess.terminationHandler = { [weak self] process in
+                Task { @MainActor in
+                    self?.handleProcessTermination(process)
+                }
+            }
+
+            self.pythonExecutablePath = pythonPath
+            self.activePort = configuredPort
+            self.process = newProcess
+            self.stdoutPipe = stdoutPipe
+            self.stderrPipe = stderrPipe
+            self.stdoutBuffer.removeAll(keepingCapacity: true)
+            self.stderrBuffer.removeAll(keepingCapacity: true)
+
+            attachOutputHandlers()
+
+            do {
+                try newProcess.run()
+            } catch {
+                throw WorkerManagerError.launchFailed(error.localizedDescription)
+            }
+
+            beginHealthPolling(host: configuredHost, fallbackPort: configuredPort)
+            beginStartupTimeout()
+        } catch {
+            transitionToError(error.localizedDescription)
+            clearProcessReferences()
+        }
+    }
+
+    /// Stop the worker process and cancel all monitoring.
+    func stop() async {
+        stopRequested = true
+        cancelMonitoringTasks()
+        detachOutputHandlers()
+
+        guard let process else {
+            clearProcessReferences()
+            state = .stopped
+            return
+        }
+
+        process.terminationHandler = nil
+
+        if process.isRunning {
+            process.terminate()
+            await waitForTermination(of: process)
+            if process.isRunning {
+                kill(process.processIdentifier, SIGKILL)
+            }
+        }
+
+        clearProcessReferences()
+        state = .stopped
+        lastErrorMessage = nil
+    }
+
+    // MARK: - Private monitoring
+
+    private var isTransitionalState: Bool {
+        switch state {
+        case .starting, .warmingUp:
+            return true
+        case .stopped, .ready, .error:
+            return false
+        }
+    }
+
+    private func beginHealthPolling(host: String, fallbackPort: Int) {
+        healthPollTask?.cancel()
+        healthPollTask = Task { [weak self] in
+            guard let self else { return }
+
+            while !Task.isCancelled {
+                guard let process = self.process, process.isRunning else { return }
+
+                let port = self.activePort ?? fallbackPort
+                let healthy = await self.checkHealth(host: host, port: port)
+                if healthy {
+                    self.state = .ready
+                    return
+                }
+
+                if self.state == .starting {
+                    self.state = .warmingUp
+                }
+
+                try? await Task.sleep(nanoseconds: Configuration.healthPollIntervalNanoseconds)
+            }
+        }
+    }
+
+    private func beginStartupTimeout() {
+        startupTimeoutTask?.cancel()
+        startupTimeoutTask = Task { [weak self] in
+            guard let self else { return }
+            try? await Task.sleep(nanoseconds: Configuration.startupTimeoutNanoseconds)
+            guard !Task.isCancelled else { return }
+
+            guard let process = self.process, process.isRunning else { return }
+            guard self.state != .ready else { return }
+
+            self.transitionToError("Worker failed to become healthy before startup timeout.")
+            await self.terminateAfterFailure(process)
+        }
+    }
+
+    private func terminateAfterFailure(_ process: Process) async {
+        cancelMonitoringTasks()
+        detachOutputHandlers()
+        process.terminationHandler = nil
+
+        if process.isRunning {
+            process.terminate()
+            await waitForTermination(of: process)
+            if process.isRunning {
+                kill(process.processIdentifier, SIGKILL)
+            }
+        }
+
+        clearProcessReferences()
+    }
+
+    private func waitForTermination(of process: Process) async {
+        let deadline = Date().addingTimeInterval(Configuration.terminationGraceSeconds)
+        while process.isRunning && Date() < deadline {
+            try? await Task.sleep(nanoseconds: Configuration.terminationPollNanoseconds)
+        }
+    }
+
+    private func handleProcessTermination(_ process: Process) {
+        cancelMonitoringTasks()
+        detachOutputHandlers()
+
+        if stopRequested {
+            state = .stopped
+            stopRequested = false
+        } else if case .error = state {
+            // Keep the existing error state from startup timeout or launch failure.
+        } else {
+            let detail = process.terminationReason == .exit
+                ? "Worker exited with status \(process.terminationStatus)."
+                : "Worker was terminated by signal."
+            transitionToError(detail)
+        }
+
+        clearProcessReferences()
+    }
+
+    // MARK: - Output parsing
+
+    private func attachOutputHandlers() {
+        stdoutPipe?.fileHandleForReading.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            if data.isEmpty {
+                handle.readabilityHandler = nil
+                return
+            }
+            Task { @MainActor [weak self] in
+                self?.consumeOutputData(data, fromStandardError: false)
+            }
+        }
+
+        stderrPipe?.fileHandleForReading.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            if data.isEmpty {
+                handle.readabilityHandler = nil
+                return
+            }
+            Task { @MainActor [weak self] in
+                self?.consumeOutputData(data, fromStandardError: true)
+            }
+        }
+    }
+
+    private func detachOutputHandlers() {
+        stdoutPipe?.fileHandleForReading.readabilityHandler = nil
+        stderrPipe?.fileHandleForReading.readabilityHandler = nil
+    }
+
+    private func consumeOutputData(_ data: Data, fromStandardError: Bool) {
+        if fromStandardError {
+            stderrBuffer.append(data)
+            processBufferedLines(buffer: &stderrBuffer, fromStandardError: true)
+        } else {
+            stdoutBuffer.append(data)
+            processBufferedLines(buffer: &stdoutBuffer, fromStandardError: false)
+        }
+    }
+
+    private func processBufferedLines(buffer: inout Data, fromStandardError: Bool) {
+        let newlineData = Data([0x0A])
+
+        while let newlineRange = buffer.range(of: newlineData) {
+            let lineData = buffer.subdata(in: 0..<newlineRange.lowerBound)
+            buffer.removeSubrange(0..<newlineRange.upperBound)
+
+            guard var line = String(data: lineData, encoding: .utf8) else { continue }
+            line = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !line.isEmpty else { continue }
+
+            handleOutputLine(line, fromStandardError: fromStandardError)
+        }
+    }
+
+    private func handleOutputLine(_ line: String, fromStandardError: Bool) {
+        lastOutputLine = line
+
+        let logPrefix = fromStandardError ? "stderr" : "stdout"
+        appendRecentLog("[\(logPrefix)] \(line)")
+
+        if let parsedPort = parsePort(from: line) {
+            activePort = parsedPort
+            if state == .starting {
+                state = .warmingUp
+            }
+        }
+    }
+
+    private func appendRecentLog(_ line: String) {
+        recentLogs.append(line)
+        if recentLogs.count > Configuration.maxRecentLogLines {
+            recentLogs.removeFirst(recentLogs.count - Configuration.maxRecentLogLines)
+        }
+    }
+
+    private func parsePort(from line: String) -> Int? {
+        guard line.localizedCaseInsensitiveContains("http://")
+            || line.localizedCaseInsensitiveContains("uvicorn")
+            || line.localizedCaseInsensitiveContains("running on")
+        else {
+            return nil
+        }
+
+        let pattern = #":([0-9]{2,5})\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+
+        let nsRange = NSRange(line.startIndex..<line.endIndex, in: line)
+        guard let match = regex.firstMatch(in: line, range: nsRange),
+              match.numberOfRanges > 1,
+              let range = Range(match.range(at: 1), in: line),
+              let port = Int(line[range]) else {
+            return nil
+        }
+
+        return port
+    }
+
+    // MARK: - Health checks
+
+    private func checkHealth(host: String, port: Int) async -> Bool {
+        guard let url = URL(string: "http://\(host):\(port)\(Configuration.healthPath)") else {
+            return false
+        }
+
+        var request = URLRequest(url: url)
+        request.timeoutInterval = Configuration.healthRequestTimeoutSeconds
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                return false
+            }
+            let health = try JSONDecoder().decode(HealthResponse.self, from: data)
+            return health.status == Configuration.healthyStatus
+        } catch {
+            return false
+        }
+    }
+
+    // MARK: - Discovery and launch configuration
+
+    private func configuredWorkerHost() -> String {
+        let rawHost = UserDefaults.standard.string(forKey: Configuration.workerHostKey)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if let rawHost, !rawHost.isEmpty {
+            return rawHost
+        }
+        return Constants.API.defaultHost
+    }
+
+    private func configuredWorkerPort() -> Int {
+        let savedPort = UserDefaults.standard.integer(forKey: Configuration.workerPortKey)
+        return savedPort > 0 ? savedPort : Constants.API.defaultPort
+    }
+
+    private func workerEnvironment(port: Int) -> [String: String] {
+        var environment = ProcessInfo.processInfo.environment
+        environment[Configuration.workerPortEnvKey] = String(port)
+        return environment
+    }
+
+    private func findPythonExecutable() throws -> String {
+        for command in Configuration.pythonCommandCandidates {
+            if let executable = try resolveExecutablePath(command),
+               FileManager.default.isExecutableFile(atPath: executable) {
+                return executable
+            }
+        }
+
+        for candidatePath in Configuration.pythonPathCandidates
+        where FileManager.default.isExecutableFile(atPath: candidatePath) {
+            return candidatePath
+        }
+
+        throw WorkerManagerError.pythonNotFound
+    }
+
+    private func resolveExecutablePath(_ command: String) throws -> String? {
+        let process = Process()
+        let outputPipe = Pipe()
+
+        process.executableURL = URL(fileURLWithPath: Configuration.envExecutable)
+        process.arguments = [Configuration.whichCommand, command]
+        process.standardOutput = outputPipe
+        process.standardError = Pipe()
+
+        do {
+            try process.run()
+        } catch {
+            throw WorkerManagerError.launchFailed(error.localizedDescription)
+        }
+
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { return nil }
+
+        let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        let rawPath = String(decoding: data, as: UTF8.self)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return rawPath.isEmpty ? nil : rawPath
+    }
+
+    private func resolveWorkingDirectory() throws -> URL {
+        var candidates: [URL] = []
+
+        if let envRoot = ProcessInfo.processInfo.environment[Configuration.repoRootEnvKey],
+           !envRoot.isEmpty {
+            candidates.append(URL(fileURLWithPath: envRoot, isDirectory: true))
+        }
+
+        let currentDirectoryURL = URL(
+            fileURLWithPath: FileManager.default.currentDirectoryPath,
+            isDirectory: true
+        )
+        candidates.append(currentDirectoryURL)
+
+        var sourceDirectory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        for _ in 0..<Configuration.maxDirectoryAscents {
+            candidates.append(sourceDirectory)
+            sourceDirectory.deleteLastPathComponent()
+        }
+
+        if let resolved = candidates.first(where: { workerModuleExists(at: $0) }) {
+            return resolved
+        }
+
+        throw WorkerManagerError.workerModuleNotFound
+    }
+
+    private func workerModuleExists(at directory: URL) -> Bool {
+        let modulePath = directory
+            .appendingPathComponent("hypnogen")
+            .appendingPathComponent("api")
+            .appendingPathComponent("app.py")
+            .path
+        return FileManager.default.fileExists(atPath: modulePath)
+    }
+
+    // MARK: - State helpers
+
+    private func transitionToError(_ message: String) {
+        lastErrorMessage = message
+        state = .error(message)
+    }
+
+    private func clearProcessReferences() {
+        process = nil
+        stdoutPipe = nil
+        stderrPipe = nil
+        stdoutBuffer.removeAll(keepingCapacity: false)
+        stderrBuffer.removeAll(keepingCapacity: false)
+        activePort = nil
+    }
+
+    private func cancelMonitoringTasks() {
+        healthPollTask?.cancel()
+        healthPollTask = nil
+
+        startupTimeoutTask?.cancel()
+        startupTimeoutTask = nil
+    }
+
+    deinit {
+        healthPollTask?.cancel()
+        startupTimeoutTask?.cancel()
+        stdoutPipe?.fileHandleForReading.readabilityHandler = nil
+        stderrPipe?.fileHandleForReading.readabilityHandler = nil
+        process?.terminationHandler = nil
+        if process?.isRunning == true {
+            process?.terminate()
+        }
+    }
+}

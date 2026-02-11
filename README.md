@@ -11,11 +11,12 @@
 
 <p align="center">
   <a href="#features">Features</a> •
+  <a href="#architecture">Architecture</a> •
   <a href="#installation">Installation</a> •
   <a href="#quickstart">Quickstart</a> •
-  <a href="#usage">Usage</a> •
-  <a href="#gradio-ui">Gradio UI</a> •
-  <a href="#cli">CLI</a>
+  <a href="#macos-app">macOS App</a> •
+  <a href="#api">API</a> •
+  <a href="#development">Development</a>
 </p>
 
 ---
