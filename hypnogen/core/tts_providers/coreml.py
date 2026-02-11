@@ -1,15 +1,20 @@
-"""CoreML-only Kokoro TTS provider.
+"""CoreML hybrid Kokoro TTS provider.
 
-This provider runs a two-stage CoreML inference pipeline:
-1. Duration model: token ids -> durations + intermediate features.
-2. Decoder-only model: aligned features -> waveform.
+This provider runs a hybrid inference pipeline:
+1. Duration model (CoreML/ANE): token ids -> durations + intermediate features.
+2. Prosody prediction (PyTorch CPU): F0Ntrain for F0/N curves.
+3. Decoder model (CoreML/ANE): aligned features + F0/N -> waveform.
 
-No PyTorch fallback is used by this provider.
+The PyTorch predictor is loaded lazily on first use for F0Ntrain computation.
+If PyTorch/KModel is unavailable, falls back to the energy-derived heuristic.
 """
 
 from __future__ import annotations
 
 import json
+import logging
+import time
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
@@ -19,6 +24,8 @@ import numpy as np
 from kokoro import KPipeline
 
 from .base import TTSProvider
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import coremltools as ct
@@ -91,6 +98,8 @@ class CoreMLProvider(TTSProvider):
         self._pipelines: dict[str, KPipeline] = {}
         self._vocab_by_repo: dict[str, dict[str, int]] = {}
         self._lock = Lock()
+        self._pytorch_model: Any | None = None
+        self._f0ntrain_available: bool = False
 
         self._load_models()
         self._warm_up_models()
@@ -369,6 +378,36 @@ class CoreMLProvider(TTSProvider):
         }
         decoder_model.predict(decoder_inputs)
 
+    def _ensure_pytorch_predictor(self) -> bool:
+        if self._f0ntrain_available:
+            return True
+        if self._pytorch_model is not None:
+            return False
+
+        with self._lock:
+            if self._f0ntrain_available:
+                return True
+            try:
+                import torch
+                from kokoro import KModel
+
+                self._pytorch_model = KModel().to("cpu").eval()
+                if (
+                    hasattr(self._pytorch_model, "predictor")
+                    and hasattr(self._pytorch_model.predictor, "F0Ntrain")
+                ):
+                    self._f0ntrain_available = True
+                    logger.info("PyTorch predictor loaded for F0Ntrain (hybrid mode)")
+                    return True
+                logger.warning("KModel loaded but predictor.F0Ntrain not found")
+                return False
+            except Exception:
+                logger.info(
+                    "PyTorch KModel unavailable; using energy heuristic for F0/N"
+                )
+                self._pytorch_model = False  # sentinel to prevent retries
+                return False
+
     def _get_pipeline(self, lang_code: str) -> KPipeline:
         with self._lock:
             if lang_code not in self._pipelines:
@@ -545,7 +584,11 @@ class CoreMLProvider(TTSProvider):
         return np.interp(dst, src, values).astype(np.float32)
 
     def _derive_f0_n(self, asr: np.ndarray, f0_frames: int) -> tuple[np.ndarray, np.ndarray]:
-        # Energy-derived heuristic curves for decoder-only models.
+        warnings.warn(
+            "_derive_f0_n is deprecated; use F0Ntrain via _ensure_pytorch_predictor",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         energy = np.sqrt(np.mean(np.square(asr), axis=1))[0]
         energy = self._smooth_1d(energy.astype(np.float32))
         min_energy = float(np.min(energy))
@@ -556,6 +599,45 @@ class CoreMLProvider(TTSProvider):
         f0_pred = (0.08 + 0.92 * normalized).astype(np.float32)
         n_pred = (NOISE_BASELINE + NOISE_VARIANCE * (1.0 - normalized)).astype(np.float32)
         return f0_pred.reshape(1, f0_frames), n_pred.reshape(1, f0_frames)
+
+    def _compute_f0_n_f0ntrain(
+        self,
+        duration_outputs: dict[str, Any],
+        alignment: np.ndarray,
+        token_count: int,
+        ref_s: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        import torch
+
+        assert self._duration_spec is not None
+
+        d_np = self._canon_t_en(
+            self._as_feature_tensor(duration_outputs[self._duration_spec.d_name])
+        )
+        s_np = self._as_feature_tensor(
+            duration_outputs[self._duration_spec.s_name]
+        ).astype(np.float32).reshape(1, -1)
+
+        # F0Ntrain expects s = ref_s[:, 128:] (128 dims).
+        # Duration model output 's' may be 128 or 256 dims depending on export.
+        if s_np.shape[1] >= 256:
+            s_np = s_np[:, 128:]
+        elif s_np.shape[1] < 128:
+            s_np = ref_s.astype(np.float32).reshape(1, -1)[:, 128:]
+
+        en_np = np.matmul(d_np[:, :, :token_count], alignment).astype(np.float32)
+
+        model = self._pytorch_model
+        assert model is not None and model is not False
+
+        with torch.no_grad():
+            en_t = torch.from_numpy(en_np)
+            s_t = torch.from_numpy(s_np)
+            f0_out, n_out = model.predictor.F0Ntrain(en_t, s_t)
+            return (
+                f0_out.cpu().numpy().astype(np.float32),
+                n_out.cpu().numpy().astype(np.float32),
+            )
 
     @staticmethod
     def _bucket_seconds_from_pred_dur(pred_dur: np.ndarray, token_count: int) -> float:
@@ -627,6 +709,8 @@ class CoreMLProvider(TTSProvider):
         if self._duration_model is None or self._duration_spec is None:
             raise RuntimeError("Duration model is not initialized.")
 
+        t0 = time.perf_counter()
+
         input_ids, attention_mask, valid_tokens = self._prepare_duration_inputs(
             phonemes=phonemes,
             vocab=vocab,
@@ -639,10 +723,13 @@ class CoreMLProvider(TTSProvider):
             self._duration_spec.ref_s_name: ref_s.astype(np.float32),
             self._duration_spec.speed_name: np.array([speed], dtype=np.float32),
         }
+
+        t_dur = time.perf_counter()
         try:
             duration_outputs = self._duration_model.predict(duration_inputs)
         except Exception as exc:
             raise RuntimeError("CoreML duration inference failed.") from exc
+        t_dur_done = time.perf_counter()
 
         pred_dur = self._as_feature_tensor(duration_outputs[self._duration_spec.pred_dur_name]).astype(np.float32)
         t_en = self._canon_t_en(self._as_feature_tensor(duration_outputs[self._duration_spec.t_en_name]))
@@ -655,6 +742,7 @@ class CoreMLProvider(TTSProvider):
         decoder_spec = self._select_bucket(predicted_seconds)
         decoder_model = self._decoder_models[decoder_spec.bucket_name]
 
+        t_align = time.perf_counter()
         alignment = self._build_alignment(
             pred_dur=pred_dur[0],
             token_count=token_count,
@@ -662,8 +750,20 @@ class CoreMLProvider(TTSProvider):
         )
         asr = np.matmul(t_en[:, :, :token_count], alignment).astype(np.float32)
         asr = self._fit_asr_to_shape(asr, decoder_spec)
+        t_align_done = time.perf_counter()
 
-        f0_pred, n_pred = self._derive_f0_n(asr.reshape(1, decoder_spec.asr_channels, decoder_spec.asr_frames), decoder_spec.f0_frames)
+        t_f0 = time.perf_counter()
+        if self._ensure_pytorch_predictor():
+            f0_pred, n_pred = self._compute_f0_n_f0ntrain(
+                duration_outputs, alignment, token_count, ref_s,
+            )
+        else:
+            f0_pred, n_pred = self._derive_f0_n(
+                asr.reshape(1, decoder_spec.asr_channels, decoder_spec.asr_frames),
+                decoder_spec.f0_frames,
+            )
+        t_f0_done = time.perf_counter()
+
         f0_pred = self._fit_curve_to_shape(f0_pred, decoder_spec.f0_shape)
         n_pred = self._fit_curve_to_shape(n_pred, decoder_spec.n_shape)
         ref_s_fit = self._fit_ref_s_to_shape(ref_s, decoder_spec.ref_s_shape)
@@ -674,17 +774,30 @@ class CoreMLProvider(TTSProvider):
             decoder_spec.n_name: n_pred,
             decoder_spec.ref_s_name: ref_s_fit,
         }
+
+        t_dec = time.perf_counter()
         try:
             decoder_outputs = decoder_model.predict(decoder_inputs)
         except Exception as exc:
             raise RuntimeError(
                 f"CoreML decoder inference failed for bucket {decoder_spec.bucket_name}."
             ) from exc
+        t_dec_done = time.perf_counter()
+
         waveform = self._as_feature_tensor(decoder_outputs[decoder_spec.waveform_name]).astype(np.float32).reshape(-1)
 
         target_samples = int(round(predicted_seconds * SAMPLE_RATE))
         if target_samples > 0:
             waveform = waveform[: min(target_samples, waveform.shape[0])]
+
+        logger.debug(
+            "Segment timing: duration=%.3fs align=%.3fs f0n=%.3fs decoder=%.3fs total=%.3fs",
+            t_dur_done - t_dur,
+            t_align_done - t_align,
+            t_f0_done - t_f0,
+            t_dec_done - t_dec,
+            time.perf_counter() - t0,
+        )
         return waveform
 
     def _synthesize_coreml(self, text: str, voice: str, speed: float) -> np.ndarray:
@@ -745,6 +858,8 @@ class CoreMLProvider(TTSProvider):
         self._decoder_specs.clear()
         self._pipelines.clear()
         self._vocab_by_repo.clear()
+        self._pytorch_model = None
+        self._f0ntrain_available = False
 
     @property
     def is_using_coreml(self) -> bool:
