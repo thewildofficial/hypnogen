@@ -16,10 +16,10 @@ final class LibraryTests: HypnogenUITestCase {
 
     func testOutputsLibraryNavigation() {
         // Navigate to Outputs Library via sidebar
-        let outputsSection = app.otherElements["sidebarOutputsSection"].firstMatch
+        let outputsSection = findElement("sidebarOutputsSection")
         if !outputsSection.waitForExistence(timeout: Self.defaultTimeout) {
             // Try tapping "Outputs Library" static text as fallback
-            let outputsText = app.staticTexts["Outputs Library"].firstMatch
+            let outputsText = findElement("Outputs Library")
             waitForElement(outputsText)
             outputsText.tap()
         } else {
@@ -29,23 +29,23 @@ final class LibraryTests: HypnogenUITestCase {
         screenshot("Library_Navigated")
 
         // Verify the outputs grid view loads
-        let outputsGrid = app.otherElements["outputsGrid"]
+        let outputsGrid = findElement("outputsGrid")
         waitForElement(outputsGrid, timeout: Self.defaultTimeout, "Outputs library view should appear")
     }
 
     func testOutputsLibraryDisplaysEmptyOrPopulated() {
         // Navigate to the library
-        let outputsSection = app.otherElements["sidebarOutputsSection"].firstMatch
+        let outputsSection = findElement("sidebarOutputsSection")
         if outputsSection.waitForExistence(timeout: Self.defaultTimeout) {
             outputsSection.tap()
         }
 
-        let outputsGrid = app.otherElements["outputsGrid"]
+        let outputsGrid = findElement("outputsGrid")
         waitForElement(outputsGrid)
 
         // On a fresh launch there are no completed renders, so expect empty state
-        let emptyStateText = app.staticTexts["No Outputs"]
-        let outputItems = app.otherElements.matching(
+        let emptyStateText = findElement("No Outputs")
+        let outputItems = app.descendants(matching: .any).matching(
             NSPredicate(format: "identifier BEGINSWITH 'outputItem_'")
         )
 

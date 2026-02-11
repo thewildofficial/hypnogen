@@ -168,6 +168,36 @@ class CaseResult:
     warm: Dict[str, Any]
 
 
+def normalize_audio_result(result: Any) -> bytes:
+    """Normalize various audio return formats to raw bytes.
+    
+    Handles:
+    - bytes
+    - (bytes, sample_rate)
+    - list of bytes
+    - list of (bytes, sample_rate)
+    """
+    if isinstance(result, bytes):
+        return result
+    
+    if isinstance(result, tuple):
+        # Assume (bytes, sample_rate)
+        return result[0]
+    
+    if isinstance(result, list):
+        normalized_chunks = []
+        for chunk in result:
+            if isinstance(chunk, bytes):
+                normalized_chunks.append(chunk)
+            elif isinstance(chunk, tuple):
+                normalized_chunks.append(chunk[0])
+            else:
+                normalized_chunks.append(chunk)
+        return b"".join(normalized_chunks)
+    
+    return result
+
+
 def synthesize_with_timing(
     provider,
     text: str,
@@ -179,11 +209,13 @@ def synthesize_with_timing(
     
     # Use the provider's synthesize method
     # Assuming provider has synthesize_batch or similar
-    if hasattr(provider, 'synthesize_batch'):
-        audio_chunks = provider.synthesize_batch([text], voice=voice, speed=speed)
-        audio_data = b''.join(audio_chunks) if isinstance(audio_chunks, list) else audio_chunks
+    if hasattr(provider, "synthesize_batch"):
+        result = provider.synthesize_batch([text], voice=voice, speed=speed)
     else:
-        audio_data = provider.synthesize(text, voice=voice, speed=speed)
+        result = provider.synthesize(text, voice=voice, speed=speed)
+    
+    audio_data = normalize_audio_result(result)
+
     
     elapsed = time.perf_counter() - start
     return audio_data, elapsed

@@ -15,13 +15,13 @@ final class ProjectTests: HypnogenUITestCase {
     // MARK: - Tests
 
     func testCreateNewProject() {
-        let newProjectButton = app.buttons["newProjectButton"].firstMatch
+        let newProjectButton = findElement("newProjectButton")
         waitForElement(newProjectButton)
         newProjectButton.tap()
         screenshot("Project_Created")
 
         // A project name field should appear in the editor
-        let nameField = app.textFields["projectNameField"]
+        let nameField = findElement("projectNameField")
         waitForElement(nameField, timeout: Self.defaultTimeout, "Project name field should appear after creating a project")
 
         // Default name should be "Untitled Project"
@@ -31,11 +31,11 @@ final class ProjectTests: HypnogenUITestCase {
 
     func testEditProjectName() {
         // Create a project first
-        let newProjectButton = app.buttons["newProjectButton"].firstMatch
+        let newProjectButton = findElement("newProjectButton")
         waitForElement(newProjectButton)
         newProjectButton.tap()
 
-        let nameField = app.textFields["projectNameField"]
+        let nameField = findElement("projectNameField")
         waitForElement(nameField)
 
         // Clear and type a new name
@@ -50,11 +50,11 @@ final class ProjectTests: HypnogenUITestCase {
 
     func testEditProjectScript() {
         // Create a project
-        let newProjectButton = app.buttons["newProjectButton"].firstMatch
+        let newProjectButton = findElement("newProjectButton")
         waitForElement(newProjectButton)
         newProjectButton.tap()
 
-        let scriptEditor = app.textViews["scriptEditor"]
+        let scriptEditor = findElement("scriptEditor")
         waitForElement(scriptEditor)
 
         // Type into the script editor
@@ -68,15 +68,15 @@ final class ProjectTests: HypnogenUITestCase {
 
     func testAddAffirmation() {
         // Create a project
-        let newProjectButton = app.buttons["newProjectButton"].firstMatch
+        let newProjectButton = findElement("newProjectButton")
         waitForElement(newProjectButton)
         newProjectButton.tap()
 
-        let addButton = app.buttons["addAffirmationButton"]
+        let addButton = findElement("addAffirmationButton")
         waitForElement(addButton)
 
         // Look for the "Add affirmation..." placeholder text field
-        let addField = app.textFields["Add affirmation..."]
+        let addField = findElement("Add affirmation...")
         if addField.exists {
             addField.tap()
             addField.typeText("I am calm and confident")
@@ -85,14 +85,14 @@ final class ProjectTests: HypnogenUITestCase {
         }
 
         // Verify the affirmation list contains items
-        let affirmationsList = app.scrollViews["affirmationsList"].firstMatch
-        let listExists = affirmationsList.exists || app.otherElements["affirmationsList"].exists
+        let affirmationsList = findElement("affirmationsList")
+        let listExists = affirmationsList.exists
         XCTAssertTrue(listExists || addButton.exists, "Affirmations panel should be visible")
     }
 
     func testDeleteProject() {
         // Create a project
-        let newProjectButton = app.buttons["newProjectButton"].firstMatch
+        let newProjectButton = findElement("newProjectButton")
         waitForElement(newProjectButton)
         newProjectButton.tap()
 

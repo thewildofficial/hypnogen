@@ -11,7 +11,7 @@ import pytest
 from hypnogen.benchmarks.bench_tts_only import (
     get_git_sha,
     get_machine_info,
-    validate_audio,
+    validate_audio, normalize_audio_result,
     run_benchmark
 )
 
@@ -197,3 +197,31 @@ class TestBenchmarkIntegration:
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
+
+class TestNormalization:
+    """Tests for audio result normalization."""
+    
+    def test_normalize_bytes(self):
+        """Raw bytes should be returned as-is."""
+        data = b"audio data"
+        assert normalize_audio_result(data) == data
+        
+    def test_normalize_tuple(self):
+        """(bytes, sample_rate) should return bytes."""
+        data = (b"audio data", 22050)
+        assert normalize_audio_result(data) == b"audio data"
+        
+    def test_normalize_list_of_bytes(self):
+        """List of bytes should be joined."""
+        data = [b"chunk1", b"chunk2"]
+        assert normalize_audio_result(data) == b"chunk1chunk2"
+        
+    def test_normalize_list_of_tuples(self):
+        """List of (bytes, sample_rate) should be joined."""
+        data = [(b"chunk1", 22050), (b"chunk2", 22050)]
+        assert normalize_audio_result(data) == b"chunk1chunk2"
+        
+    def test_normalize_mixed_list(self):
+        """Mixed list of bytes and tuples should be joined."""
+        data = [b"chunk1", (b"chunk2", 22050)]
+        assert normalize_audio_result(data) == b"chunk1chunk2"

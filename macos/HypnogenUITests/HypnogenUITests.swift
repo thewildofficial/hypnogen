@@ -28,6 +28,11 @@ class HypnogenUITestCase: XCTestCase {
 
     // MARK: - Convenience Helpers
 
+    /// Robustly finds an element by its accessibility identifier, regardless of its type.
+    func findElement(_ identifier: String) -> XCUIElement {
+        return app.descendants(matching: .any)[identifier].firstMatch
+    }
+
     /// Waits for an element to exist, failing with a descriptive message if it doesn't.
     func waitForElement(
         _ element: XCUIElement,
@@ -40,15 +45,15 @@ class HypnogenUITestCase: XCTestCase {
 
     /// Dismisses onboarding by tapping Skip, if the onboarding sheet is visible.
     func dismissOnboardingIfPresent() {
-        let onboarding = app.otherElements["onboardingView"]
+        let onboarding = findElement("onboardingView")
         if onboarding.waitForExistence(timeout: 3) {
-            let skipButton = app.buttons["skipButton"]
+            let skipButton = findElement("skipButton")
             if skipButton.exists {
                 skipButton.tap()
             }
         }
         // Wait for the main sidebar to be ready
-        let sidebar = app.otherElements["sidebar"]
+        let sidebar = findElement("sidebar")
         _ = sidebar.waitForExistence(timeout: Self.defaultTimeout)
     }
 
