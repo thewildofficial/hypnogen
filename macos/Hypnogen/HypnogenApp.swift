@@ -5,6 +5,35 @@
 
 import SwiftUI
 
+// MARK: - Design System Color Tokens (Temporary - until DesignSystem files added to Xcode project)
+
+extension Color {
+    static let canvas = Color("Canvas")
+    static let surface = Color("Surface")
+    static let stroke = Color("Stroke")
+    static let accentPrimary = Color("AccentPrimary")
+    static let accentSecondary = Color("AccentSecondary")
+    static let textPrimary = Color("TextPrimary")
+    static let textSecondary = Color("TextSecondary")
+}
+
+enum Radius {
+    static let sm: CGFloat = 6
+    static let md: CGFloat = 12
+    static let lg: CGFloat = 18
+}
+
+struct PrimaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(Color.accentPrimary)
+            .foregroundColor(Color.canvas)
+            .cornerRadius(6)
+    }
+}
+
 @main
 struct HypnogenApp: App {
     @State private var projectsViewModel = ProjectsViewModel()
