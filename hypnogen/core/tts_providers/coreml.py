@@ -656,9 +656,25 @@ class CoreMLProvider(TTSProvider):
 
         assert self._duration_spec is not None
 
-        d_np = self._canon_t_en(
-            self._as_feature_tensor(duration_outputs[self._duration_spec.d_name])
-        )
+        # Get d tensor from duration model output
+        # d shape from CoreML: [1, time, 640] (batch, time, channels)
+        # Need to transpose to [1, 640, time] for matmul
+        d_raw = self._as_feature_tensor(duration_outputs[self._duration_spec.d_name])
+        if d_raw.ndim != 3:
+            raise RuntimeError(f"Unexpected d rank: {d_raw.ndim}, expected 3")
+        
+        # d from CoreML is [1, time, 640], transpose to [1, 640, time]
+        if d_raw.shape[2] == 640:
+            d_np = np.transpose(d_raw, (0, 2, 1)).astype(np.float32)
+        elif d_raw.shape[1] == 640:
+            d_np = d_raw.astype(np.float32, copy=False)
+        else:
+            # Try to identify which dim is channels (should be 640)
+            if d_raw.shape[1] > d_raw.shape[2]:
+                d_np = d_raw.astype(np.float32, copy=False)
+            else:
+                d_np = np.transpose(d_raw, (0, 2, 1)).astype(np.float32)
+        
         s_np = self._as_feature_tensor(
             duration_outputs[self._duration_spec.s_name]
         ).astype(np.float32).reshape(1, -1)
@@ -670,6 +686,7 @@ class CoreMLProvider(TTSProvider):
         elif s_np.shape[1] < 128:
             s_np = ref_s.astype(np.float32).reshape(1, -1)[:, 128:]
 
+        # Compute en: [1, 640, time] @ [time, frames] = [1, 640, frames]
         en_np = np.matmul(d_np[:, :, :token_count], alignment).astype(np.float32)
 
         model = self._pytorch_model
