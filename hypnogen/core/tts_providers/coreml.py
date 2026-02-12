@@ -128,12 +128,57 @@ class CoreMLProvider(TTSProvider):
                 return candidate
         return candidates[0]
 
+    def _get_compiled_model_cache_path(self, source_path: Path) -> Path:
+        """Get the cache path for a compiled model, ensuring cache directory exists."""
+        cache_root = Path.home() / ".cache" / "hypnogen" / "coreml_compiled"
+        cache_root.mkdir(parents=True, exist_ok=True)
+        # Cache key based on source path and modification time
+        mtime = source_path.stat().st_mtime
+        cache_name = f"{source_path.stem}_{int(mtime)}.mlmodelc"
+        return cache_root / cache_name
+
     def _load_mlmodel(self, path: Path) -> Any:
         # Prefer ALL compute units so the decoder can use ANE when supported.
+        ct = self._ct
+        
+        # If it's a .mlpackage, use persistent compiled cache to avoid ANE cold compile delays
+        if path.suffix == ".mlpackage":
+            cache_path = self._get_compiled_model_cache_path(path)
+            
+            if cache_path.exists():
+                logger.info(f"[CoreML] Using cached compiled model: {cache_path}")
+                try:
+                    return ct.models.MLModel(str(cache_path), compute_units=ct.ComputeUnit.ALL)
+                except Exception as e:
+                    logger.warning(f"[CoreML] Failed to load cached model, will recompile: {e}")
+                    # Remove corrupted cache
+                    import shutil
+                    shutil.rmtree(cache_path, ignore_errors=True)
+            
+            # Compile and cache
+            logger.info(f"[CoreML] Loading model (this may take 10+ minutes on first run for ANE compilation): {path.name}")
+            try:
+                # Load the model - this triggers compilation internally
+                model = ct.models.MLModel(str(path), compute_units=ct.ComputeUnit.ALL)
+                # Get the compiled model path and copy to cache
+                compiled_path = model.get_compiled_model_path()
+                if compiled_path:
+                    logger.info(f"[CoreML] Model compiled at: {compiled_path}")
+                    logger.info(f"[CoreML] Copying to cache: {cache_path}")
+                    import shutil
+                    shutil.copytree(compiled_path, cache_path, dirs_exist_ok=True)
+                    logger.info(f"[CoreML] Model cached successfully")
+                return model
+            except Exception as e:
+                logger.error(f"[CoreML] Failed to compile model: {e}")
+                # Fallback: try direct load (may still work if already compiled)
+                logger.info(f"[CoreML] Falling back to direct load")
+        
+        # Direct load (for already-compiled .mlmodelc or if caching failed)
         try:
-            return self._ct.models.MLModel(str(path), compute_units=self._ct.ComputeUnit.ALL)
+            return ct.models.MLModel(str(path), compute_units=ct.ComputeUnit.ALL)
         except TypeError:
-            return self._ct.models.MLModel(str(path))
+            return ct.models.MLModel(str(path))
 
     def _load_models(self) -> None:
         if not self.model_dir.exists():
