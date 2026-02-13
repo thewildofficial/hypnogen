@@ -22,10 +22,10 @@ build/
 htmlcov/
 
 # uv
-uv.lock
 
 # Environment
 .env
+env/
 
 # IDE / Agent configs
 .vscode/
