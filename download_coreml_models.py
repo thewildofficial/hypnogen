@@ -1,111 +1,136 @@
 #!/usr/bin/env python3
-"""Download CoreML models for Kokoro TTS from HuggingFace.
+"""Copy CoreML models from vendor/kokoro-coreml into coreml_models/.
 
-This script automatically downloads pre-converted CoreML models so contributors
-don't need to manually export them (which takes 30-60 minutes).
+The models are stored via Git LFS in the vendor/kokoro-coreml submodule
+(https://github.com/mattmireles/kokoro-coreml). This script copies the
+4 required .mlpackage directories into coreml_models/ where the benchmark
+and CoreMLProvider expect them.
 
 Usage:
-    python download_coreml_models.py              # Download to default location
-    python download_coreml_models.py --out-dir ./models  # Custom location
+    uv run python download_coreml_models.py
+    uv run python download_coreml_models.py --out-dir ./models
 """
 
 import argparse
+import shutil
 import sys
 from pathlib import Path
 
+VENDOR_COREML_DIR = Path(__file__).resolve().parent / "vendor" / "kokoro-coreml" / "coreml"
 
-def download_models(out_dir: Path, repo_id: str = "FluidInference/kokoro-82m-coreml") -> bool:
-    """Download CoreML models from HuggingFace.
-    
-    Args:
-        out_dir: Directory to save models
-        repo_id: HuggingFace repo to download from
-        
-    Returns:
-        True if successful, False otherwise
-    """
-    try:
-        from huggingface_hub import hf_hub_download, list_repo_files
-    except ImportError:
-        print("❌ huggingface-hub not installed.")
-        print("   Install with: uv pip install huggingface-hub")
-        return False
-    
+REQUIRED_MODELS = [
+    "kokoro_duration.mlpackage",
+    "kokoro_decoder_only_3s.mlpackage",
+    "kokoro_decoder_only_5s.mlpackage",
+    "kokoro_decoder_only_10s.mlpackage",
+]
+
+
+def _has_weights(model_path: Path) -> bool:
+    return model_path.exists() and any(model_path.rglob("weight.bin"))
+
+
+def copy_models(out_dir: Path, vendor_dir: Path = VENDOR_COREML_DIR) -> bool:
     out_dir = Path(out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    
-    print(f"📦 Downloading CoreML models from {repo_id}")
-    print(f"   Destination: {out_dir.absolute()}")
-    print()
-    
-    try:
-        # List files in the repo
-        files = list_repo_files(repo_id)
-        
-        # Find .mlpackage directories (they appear as files with / in the path)
-        mlpackage_files = [f for f in files if '.mlpackage' in f]
-        
-        if not mlpackage_files:
-            print("⚠️  No .mlpackage files found in repository")
-            return False
-        
-        print(f"   Found {len(mlpackage_files)} model files/directories")
-        
-        # Download each file
-        downloaded = 0
-        for file_path in mlpackage_files:
-            try:
-                local_path = hf_hub_download(
-                    repo_id=repo_id,
-                    filename=file_path,
-                    local_dir=out_dir,
-                    local_dir_use_symlinks=False
-                )
-                print(f"   ✅ {file_path}")
-                downloaded += 1
-            except Exception as e:
-                print(f"   ⚠️  {file_path} - {e}")
-        
+
+    already_present = all(_has_weights(out_dir / name) for name in REQUIRED_MODELS)
+    if already_present:
+        print(f"All {len(REQUIRED_MODELS)} required models already present in {out_dir}")
+        return True
+
+    if not vendor_dir.exists():
+        print(f"Vendor CoreML directory not found: {vendor_dir}")
         print()
-        print(f"✅ Downloaded {downloaded} files to {out_dir}")
-        
-        # Check what we got
-        duration_model = out_dir / "kokoro_duration.mlpackage"
-        decoder_models = list(out_dir.glob("kokoro_decoder_only_*.mlpackage"))
-        
+        print("Make sure you cloned with submodules:")
+        print("  git submodule update --init --recursive")
         print()
-        print("📋 Model status:")
-        print(f"   Duration model: {'✅ Found' if duration_model.exists() else '❌ Missing'}")
-        print(f"   Decoder models: {len(decoder_models)} found")
-        for dm in decoder_models:
-            print(f"      - {dm.name}")
-        
-        return duration_model.exists() and len(decoder_models) > 0
-        
-    except Exception as e:
-        print(f"❌ Error downloading models: {e}")
+        print("Or clone fresh:")
+        print("  git clone --recurse-submodules <repo-url>")
         return False
+
+    missing_in_vendor = []
+    lfs_stubs = []
+    for name in REQUIRED_MODELS:
+        src = vendor_dir / name
+        if not src.exists():
+            missing_in_vendor.append(name)
+        elif not _has_weights(src):
+            lfs_stubs.append(name)
+
+    if missing_in_vendor:
+        print(f"Models missing from vendor submodule ({vendor_dir}):")
+        for name in missing_in_vendor:
+            print(f"  - {name}")
+        return False
+
+    if lfs_stubs:
+        print("Models exist but weight.bin is missing (Git LFS not pulled):")
+        for name in lfs_stubs:
+            print(f"  - {name}")
+        print()
+        print("Pull LFS files with:")
+        print(f"  cd {vendor_dir.parent} && git lfs pull")
+        return False
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    print(f"Copying CoreML models from {vendor_dir}")
+    print(f"Destination: {out_dir.absolute()}")
+    print()
+
+    ok = True
+    for name in REQUIRED_MODELS:
+        src = vendor_dir / name
+        dst = out_dir / name
+
+        if _has_weights(dst):
+            print(f"  {name}: already present, skipping")
+            continue
+
+        if dst.exists():
+            shutil.rmtree(dst)
+
+        print(f"  {name}: copying...", end=" ", flush=True)
+        try:
+            shutil.copytree(src, dst)
+            if _has_weights(dst):
+                size_mb = sum(
+                    f.stat().st_size for f in dst.rglob("*") if f.is_file()
+                ) / (1024 * 1024)
+                print(f"ok ({size_mb:.0f} MB)")
+            else:
+                print("FAILED (no weight.bin after copy)")
+                ok = False
+        except Exception as e:
+            print(f"FAILED ({e})")
+            ok = False
+
+    if ok:
+        print(f"\nAll models copied to {out_dir}")
+    else:
+        print("\nSome models failed to copy.")
+
+    return ok
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Download CoreML models for Kokoro TTS"
+        description="Copy CoreML models from vendor/kokoro-coreml to coreml_models/"
     )
     parser.add_argument(
         "--out-dir",
         type=Path,
         default=Path("coreml_models"),
-        help="Output directory for models (default: coreml_models/)"
+        help="Output directory (default: coreml_models/)",
     )
     parser.add_argument(
-        "--repo",
-        default="FluidInference/kokoro-82m-coreml",
-        help="HuggingFace repo to download from"
+        "--vendor-dir",
+        type=Path,
+        default=VENDOR_COREML_DIR,
+        help="Source vendor/kokoro-coreml/coreml directory",
     )
-    
     args = parser.parse_args()
-    
-    success = download_models(args.out_dir, args.repo)
+
+    success = copy_models(args.out_dir, args.vendor_dir)
     sys.exit(0 if success else 1)
 
 
