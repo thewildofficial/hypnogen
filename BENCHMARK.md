@@ -17,6 +17,100 @@ This document explains how to benchmark the TTS (Text-to-Speech) implementations
 
 ---
 
+## End-to-End Installation
+
+This section walks through setting up everything needed for CoreML vs PyTorch benchmarking from scratch.
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/thewildofficial/hypnogen.git
+cd hypnogen
+```
+
+### Step 2: Install Python Dependencies
+
+```bash
+# Using uv (recommended)
+uv sync
+
+# Or using pip
+pip install -e .
+```
+
+### Step 3: Set up CoreML Models (Required for CoreML Benchmark)
+
+The CoreML models must be converted from PyTorch. This is a one-time setup.
+
+```bash
+# Navigate to the Kokoro vendor package
+cd vendor/kokoro-coreml
+
+# Check what's needed - look at the README or scripts
+ls -la
+
+# The export script should be available
+# Run the conversion (this may take 30+ minutes on first run)
+python -m kokoro export --output_dir ../../coreml_models
+```
+
+If the above doesn't work, check for alternative export scripts:
+```bash
+# Alternative: check for export scripts
+ls *.py
+python export_synthesizers.py --help
+```
+
+### Step 4: Verify CoreML Models
+
+After export, verify the models exist:
+```bash
+ls -la ../coreml_models/
+```
+
+You should see:
+- `kokoro_duration.mlpackage`
+- `kokoro_synthesizer_3s.mlpackage`
+- `kokoro_decoder_only_3s.mlpackage` (or similar)
+- `kokoro_f0n_3s.mlpackage`
+
+### Step 5: Test the Setup
+
+```bash
+# Go back to repo root
+cd ../..
+
+# Test PyTorch TTS (should work out of the box)
+python -c "from hypnogen.core.tts_providers.pytorch import PyTorchTTSProvider; p = PyTorchTTSProvider(); print('PyTorch OK')"
+
+# Test CoreML TTS (requires models)
+python -c "from hypnogen.core.tts_providers.coreml import CoreMLTTSProvider; c = CoreMLTTSProvider(); print('CoreML OK')"
+```
+
+### Step 6: Run the Benchmarks
+
+Now you're ready to benchmark:
+
+```bash
+# Run PyTorch benchmark
+python -m hypnogen.benchmarks.bench_tts_only \
+  --provider pytorch \
+  --out .sisyphus/benchmarks/tts_pytorch.json
+
+# Run CoreML benchmark  
+python -m hypnogen.benchmarks.bench_tts_only \
+  --provider coreml \
+  --compute-units ALL \
+  --out .sisyphus/benchmarks/tts_coreml.json
+
+# Compare results
+python hypnogen/benchmarks/compare_tts_results.py \
+  .sisyphus/benchmarks/tts_pytorch.json \
+  .sisyphus/benchmarks/tts_coreml.json
+```
+
+---
+
 ## Quick Start
 
 ```bash
@@ -61,9 +155,34 @@ python hypnogen/benchmarks/compare_tts_results.py .sisyphus/benchmarks/tts_pytor
 ### For CoreML Benchmark (Apple Silicon)
 - Mac with Apple Silicon (M1/M2/M3/M4)
 - `coremltools` installed
-- CoreML models in `coreml_models/` directory:
-  - `kokoro_duration.mlpackage`
-  - `kokoro_synthesizer_3s.mlpackage`
+- **CoreML models must be set up** (see below)
+
+#### Setting up CoreML Models
+
+The CoreML models are NOT included in the repo (too large for git). You have two options:
+
+**Option 1: Copy pre-converted models (if available)**
+```bash
+# If you have converted models somewhere
+cp -r /path/to/models coreml_models/
+```
+
+**Option 2: Convert from PyTorch**
+```bash
+cd vendor/kokoro-coreml
+
+# Download the base model if needed
+# (check vendor/kokoro-coreml for instructions)
+
+# Export CoreML models
+python -m kokoro export --output_dir ../../coreml_models
+```
+
+The required models are:
+- `kokoro_duration.mlpackage` - Duration prediction
+- `kokoro_synthesizer_3s.mlpackage` - 3-second synthesis bucket
+- `kokoro_decoder_only_3s.mlpackage` - Decoder (3s bucket)
+- `kokoro_f0n_3s.mlpackage` - F0Ntrain model
 
 ### For log streaming (optional)
 - `log` command available (macOS)
