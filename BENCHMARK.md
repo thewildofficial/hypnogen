@@ -40,58 +40,34 @@ uv run python hypnogen/benchmarks/compare_tts_results.py \
 
 ## Getting CoreML Models
 
-Models are **not included** in git (too large). Three options:
+Models are **not included** in git (too large). 
 
-### Option A: Download from HuggingFace (Recommended - Fast)
+### Auto-Download (Easiest)
 
-Pre-converted CoreML models are available on HuggingFace:
+Run the included download script:
 
 ```bash
-# Install huggingface-cli
+# Download pre-converted models from HuggingFace
+uv run python download_coreml_models.py
+```
+
+This downloads to `coreml_models/` automatically. If models are already present, it skips them.
+
+### Manual Options
+
+If auto-download doesn't work:
+
+**Option A: HuggingFace CLI**
+```bash
 uv pip install huggingface-hub
-
-# Download the models
-mkdir -p coreml_models
-cd coreml_models
-
-# Download duration model
-uv run huggingface-cli download FluidInference/kokoro-82m-coreml --include "*.mlpackage" --local-dir .
-
-# Or download specific files manually from:
-# https://huggingface.co/FluidInference/kokoro-82m-coreml
+uv run huggingface-cli download FluidInference/kokoro-82m-coreml --local-dir coreml_models
 ```
 
-Required files:
-- `kokoro_duration.mlpackage`
-- `kokoro_decoder_only_3s.mlpackage` (or 5s/10s variants)
-
-### Option B: Use FluidAudio CLI (Auto-download)
-
-The FluidAudio Swift CLI tool auto-downloads models on first run:
-
-```bash
-# Install and run (downloads models automatically)
-swift run fluidaudio tts "Hello" --output test.wav --voice af_heart
-
-# Models cached to: ~/Library/Caches/FluidAudio/
-# Copy them to your coreml_models/ directory
-```
-
-### Option C: Export from PyTorch (30-60 min)
-
-If you need custom models or the above options don't work:
-
+**Option B: Export from PyTorch** (30-60 min, only if you need custom models)
 ```bash
 cd vendor/kokoro-coreml
-
-# Download base model (~300MB)
-uv run python -c "from kokoro import KModel; KModel()"
-
-# Export CoreML models
 uv run python export_duration.py --out-dir ../../coreml_models
 uv run python export_synthesizers.py --out-dir ../../coreml_models
-
-cd ../..
 ```
 
 ---
