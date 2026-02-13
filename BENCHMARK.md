@@ -40,22 +40,46 @@ uv run python hypnogen/benchmarks/compare_tts_results.py \
 
 ## Getting CoreML Models
 
-Models are **not included** in git (too large). Two options:
+Models are **not included** in git (too large). Three options:
 
-### Option A: Download Pre-Converted Models
+### Option A: Download from HuggingFace (Recommended - Fast)
 
-If you have access to pre-converted models:
+Pre-converted CoreML models are available on HuggingFace:
 
 ```bash
+# Install huggingface-cli
+uv pip install huggingface-hub
+
+# Download the models
 mkdir -p coreml_models
-# Copy .mlpackage files here
+cd coreml_models
+
+# Download duration model
+uv run huggingface-cli download FluidInference/kokoro-82m-coreml --include "*.mlpackage" --local-dir .
+
+# Or download specific files manually from:
+# https://huggingface.co/FluidInference/kokoro-82m-coreml
 ```
 
-Required:
+Required files:
 - `kokoro_duration.mlpackage`
-- `kokoro_decoder_only_3s.mlpackage`
+- `kokoro_decoder_only_3s.mlpackage` (or 5s/10s variants)
 
-### Option B: Export from PyTorch (30-60 min)
+### Option B: Use FluidAudio CLI (Auto-download)
+
+The FluidAudio Swift CLI tool auto-downloads models on first run:
+
+```bash
+# Install and run (downloads models automatically)
+swift run fluidaudio tts "Hello" --output test.wav --voice af_heart
+
+# Models cached to: ~/Library/Caches/FluidAudio/
+# Copy them to your coreml_models/ directory
+```
+
+### Option C: Export from PyTorch (30-60 min)
+
+If you need custom models or the above options don't work:
 
 ```bash
 cd vendor/kokoro-coreml
