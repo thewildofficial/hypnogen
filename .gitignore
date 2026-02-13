@@ -39,5 +39,8 @@ uv.lock
 *~
 .DS_Store
 
+# CoreML models (too large for git)
+coreml_models/
+
 # Orchestration
 .sisyphus/
