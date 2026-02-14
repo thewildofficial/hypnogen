@@ -1,5 +1,7 @@
 # Hypnogen Roadmap
 
+Current execution state lives in [`STATUS.md`](STATUS.md). Pending GitHub issue drafts are tracked in [`ISSUES_BACKLOG.md`](ISSUES_BACKLOG.md).
+
 ## Feature Map
 
 ### Gradio Features -> macOS Equivalents

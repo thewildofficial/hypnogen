@@ -49,8 +49,9 @@ actor WorkerManager {
 
     private var process: Process?
     private var healthPollTask: Task<Void, Never>?
-    private var stdoutPipe: Pipe?
-    private let stdoutBuffer = NSMutableString()
+    private var outputPipe: Pipe?
+    private var outputHandle: FileHandle?
+    private var outputBuffer = ""
 
     // MARK: - Initialization
 
@@ -63,26 +64,31 @@ actor WorkerManager {
 
         state = .starting
 
-        // Find Python executable
-        guard let pythonPath = findPythonExecutable() else {
-            state = .error("Python not found")
-            throw WorkerManagerError.pythonNotFound
-        }
-        pythonExecutablePath = pythonPath
+        do {
+            // Find Python executable
+            guard let pythonPath = findPythonExecutable() else {
+                throw WorkerManagerError.pythonNotFound
+            }
+            pythonExecutablePath = pythonPath
 
-        // Launch worker process
-        let port = try await launchWorkerProcess(pythonPath: pythonPath)
-        activePort = port
+            // Launch worker process
+            let port = try await launchWorkerProcess(pythonPath: pythonPath)
+            activePort = port
 
-        // Wait for worker to be ready
-        state = .warmingUp
-        let isReady = await waitForWorkerReady(timeout: Configuration.startupTimeout)
+            // Wait for worker to be ready
+            state = .warmingUp
+            let isReady = await waitForWorkerReady(timeout: Configuration.startupTimeout)
 
-        if isReady {
-            state = .ready
-        } else {
+            if isReady {
+                state = .ready
+            } else {
+                await stop()
+                state = .error("Worker failed to start within \(Int(Configuration.startupTimeout))s")
+            }
+        } catch {
             await stop()
-            state = .error("Worker failed to start within \(Int(Configuration.startupTimeout))s")
+            state = .error(error.localizedDescription)
+            throw error
         }
     }
 
@@ -125,16 +131,26 @@ actor WorkerManager {
         task.arguments = ["-m", Configuration.workerModule]
         task.currentDirectoryPath = FileManager.default.currentDirectoryPath
 
-        let stdoutPipe = Pipe()
-        task.standardOutput = stdoutPipe
-        task.standardError = Pipe()
-        self.stdoutPipe = stdoutPipe
+        let outputPipe = Pipe()
+        task.standardOutput = outputPipe
+        task.standardError = outputPipe
+        self.outputPipe = outputPipe
+        self.outputHandle = outputPipe.fileHandleForReading
+        self.outputHandle?.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            guard !data.isEmpty, let chunk = String(data: data, encoding: .utf8) else {
+                return
+            }
+            Task {
+                await self?.appendOutputChunk(chunk)
+            }
+        }
 
         try task.run()
+        process = task
 
         // Wait for port
         let port = try await waitForPort(timeout: Configuration.startupTimeout)
-        process = task
 
         return port
     }
@@ -145,18 +161,23 @@ actor WorkerManager {
         while Date() < deadline {
             try Task.checkCancellation()
 
-            let data = stdoutPipe?.fileHandleForReading.readDataToEndOfFile()
-            if let data = data, let output = String(data: data, encoding: .utf8) {
-                stdoutBuffer.append(output)
-                if let port = extractPort(from: stdoutBuffer as String) {
-                    return port
-                }
+            if let port = extractPort(from: outputBuffer) {
+                return port
             }
 
+            if let process, !process.isRunning {
+                throw WorkerManagerError.launchFailed(
+                    "Worker process exited before reporting port (status \(process.terminationStatus))."
+                )
+            }
             try await Task.sleep(nanoseconds: 100_000_000)
         }
 
         throw WorkerManagerError.launchFailed("Timeout waiting for port")
+    }
+
+    private func appendOutputChunk(_ chunk: String) {
+        outputBuffer.append(chunk)
     }
 
     private func extractPort(from output: String) -> Int? {
@@ -195,8 +216,10 @@ actor WorkerManager {
 
     private func clearReferences() {
         process = nil
-        stdoutPipe = nil
-        stdoutBuffer.setString("")
+        outputHandle?.readabilityHandler = nil
+        outputHandle = nil
+        outputPipe = nil
+        outputBuffer = ""
         activePort = nil
     }
 }

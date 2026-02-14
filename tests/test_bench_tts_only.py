@@ -225,3 +225,13 @@ class TestNormalization:
         """Mixed list of bytes and tuples should be joined."""
         data = [b"chunk1", (b"chunk2", 22050)]
         assert normalize_audio_result(data) == b"chunk1chunk2"
+
+    def test_normalize_numpy_tuple_encodes_wav_bytes(self):
+        """(numpy_audio, sample_rate) should be encoded to WAV bytes."""
+        import numpy as np
+
+        audio = np.zeros(22050, dtype=np.float32)
+        normalized = normalize_audio_result((audio, 22050))
+
+        assert isinstance(normalized, bytes)
+        assert normalized[:4] == b"RIFF"

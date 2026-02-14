@@ -10,6 +10,7 @@
 </p>
 
 <p align="center">
+  <a href="#project-status">Status</a> •
   <a href="#features">Features</a> •
   <a href="#architecture">Architecture</a> •
   <a href="#installation">Installation</a> •
@@ -18,6 +19,14 @@
   <a href="#api">API</a> •
   <a href="#development">Development</a>
 </p>
+
+---
+
+## 📌 Project Status
+
+- Current execution status and handoff checklist: [`STATUS.md`](STATUS.md)
+- Active roadmap and release framing: [`ROADMAP.md`](ROADMAP.md)
+- GitHub-ready pending issue drafts: [`ISSUES_BACKLOG.md`](ISSUES_BACKLOG.md)
 
 ---
 
@@ -52,11 +61,13 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/hypnogen.git
+git clone https://github.com/thewildofficial/hypnogen.git
 cd hypnogen
 
-# Install in editable mode
-pip install -e .
+# Sync locked dependencies
+uv sync --group dev
+
+# Optional (without uv): pip install -e .
 
 # Set up API keys (required for LLM features)
 export NVIDIA_API_KEY="your_key_here"
@@ -64,7 +75,8 @@ export GEMINI_KEY="your_key_here"
 ```
 
 ### Requirements
-- Python 3.9+
+- Python 3.11 or 3.12 (3.12 recommended)
+- `kokoro`/`misaki` currently do not support Python 3.13
 - NVIDIA API key (for Kimi K2.5) OR Gemini API key
 - ~2GB disk space for Kokoro TTS models
 
@@ -314,9 +326,10 @@ Contributions are welcome! Areas for improvement:
 - Additional voice accents (Kokoro supports many languages)
 - More script styles and induction techniques
 - Enhanced audio effects (reverb, spatial audio)
-- Performance optimizations
+- Performance optimizations (see [`ISSUES_BACKLOG.md`](ISSUES_BACKLOG.md))
 - Documentation improvements
 
+Before opening a PR, check [`STATUS.md`](STATUS.md) for current in-progress priorities and pending verification work.
 Please ensure tests pass and add new tests for new features.
 
 ---

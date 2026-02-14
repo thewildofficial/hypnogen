@@ -87,10 +87,12 @@ class CoreMLProvider(TTSProvider):
         self,
         model_dir: str | Path | None = None,
         default_bucket: str = "3s",
+        compute_units: str | Any | None = "ALL",
     ) -> None:
         self.model_dir = self._resolve_model_dir(model_dir)
         self.default_bucket = default_bucket
         self._ct = self._import_coremltools()
+        self.compute_units_name, self._compute_units = self._resolve_compute_units(compute_units)
         self._duration_model: Any | None = None
         self._duration_spec: DurationModelSpec | None = None
         self._decoder_models: dict[str, Any] = {}
@@ -103,6 +105,32 @@ class CoreMLProvider(TTSProvider):
 
         self._load_models()
         self._warm_up_models()
+
+    def _resolve_compute_units(self, compute_units: str | Any | None) -> tuple[str, Any]:
+        ct = self._ct
+        allowed_names = ("ALL", "CPU_AND_GPU", "CPU_ONLY")
+        compute_unit_enum = ct.ComputeUnit
+
+        if compute_units is None:
+            compute_units = "ALL"
+
+        if isinstance(compute_units, str):
+            normalized = compute_units.upper()
+            if normalized not in allowed_names:
+                allowed_str = ", ".join(allowed_names)
+                raise ValueError(
+                    f"Invalid compute_units '{compute_units}'. Expected one of: {allowed_str}."
+                )
+            return normalized, getattr(compute_unit_enum, normalized)
+
+        for name in allowed_names:
+            if compute_units == getattr(compute_unit_enum, name):
+                return name, compute_units
+
+        allowed_str = ", ".join(allowed_names)
+        raise ValueError(
+            f"Invalid compute_units value '{compute_units}'. Expected one of: {allowed_str}."
+        )
 
     @staticmethod
     def _import_coremltools() -> Any:
@@ -138,7 +166,7 @@ class CoreMLProvider(TTSProvider):
         return cache_root / cache_name
 
     def _load_mlmodel(self, path: Path) -> Any:
-        # Prefer ALL compute units so the decoder can use ANE when supported.
+        # Prefer configured compute units so benchmarks can compare CPU/GPU vs ANE.
         ct = self._ct
         
         # If it's a .mlpackage, use persistent compiled cache to avoid ANE cold compile delays
@@ -148,7 +176,7 @@ class CoreMLProvider(TTSProvider):
             if cache_path.exists():
                 logger.info(f"[CoreML] Using cached compiled model: {cache_path}")
                 try:
-                    return ct.models.MLModel(str(cache_path), compute_units=ct.ComputeUnit.ALL)
+                    return ct.models.MLModel(str(cache_path), compute_units=self._compute_units)
                 except Exception as e:
                     logger.warning(f"[CoreML] Failed to load cached model, will recompile: {e}")
                     # Remove corrupted cache
@@ -159,7 +187,7 @@ class CoreMLProvider(TTSProvider):
             logger.info(f"[CoreML] Loading model (this may take 10+ minutes on first run for ANE compilation): {path.name}")
             try:
                 # Load the model - this triggers compilation internally
-                model = ct.models.MLModel(str(path), compute_units=ct.ComputeUnit.ALL)
+                model = ct.models.MLModel(str(path), compute_units=self._compute_units)
                 # Get the compiled model path and copy to cache
                 compiled_path = model.get_compiled_model_path()
                 if compiled_path:
@@ -176,7 +204,7 @@ class CoreMLProvider(TTSProvider):
         
         # Direct load (for already-compiled .mlmodelc or if caching failed)
         try:
-            return ct.models.MLModel(str(path), compute_units=ct.ComputeUnit.ALL)
+            return ct.models.MLModel(str(path), compute_units=self._compute_units)
         except TypeError:
             return ct.models.MLModel(str(path))
 

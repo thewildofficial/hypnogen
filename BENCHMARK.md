@@ -9,7 +9,7 @@ The CoreML models come from [mattmireles/kokoro-coreml](https://github.com/mattm
 - **macOS** with Apple Silicon (M1/M2/M3/M4)
 - **Git LFS** installed: `brew install git-lfs && git lfs install`
 - **uv** installed: `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- **Python 3.12+**
+- **Python 3.11-3.12** (3.12 recommended; 3.13 is not supported by `kokoro`)
 
 ## Quick Start
 
@@ -17,7 +17,6 @@ The CoreML models come from [mattmireles/kokoro-coreml](https://github.com/mattm
 # 1. Clone repo with submodules + LFS
 git clone --recurse-submodules https://github.com/thewildofficial/hypnogen.git
 cd hypnogen
-git checkout wop-benchmark
 
 # 2. Pull LFS files (the CoreML .mlpackage weights)
 cd vendor/kokoro-coreml && git lfs pull && cd ../..

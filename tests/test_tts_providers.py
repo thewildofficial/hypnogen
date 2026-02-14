@@ -478,3 +478,25 @@ class TestSynthesizeBatch:
 
         assert len(results) == 2
         assert mock_synth.call_count == 2
+
+
+class TestCoreMLProviderConfig:
+    """Tests for CoreML provider initialization options."""
+
+    def test_coreml_provider_accepts_compute_units(self):
+        """CoreML provider should accept compute_units without crashing."""
+        from hypnogen.core.tts_providers.coreml import CoreMLProvider
+
+        class _DummyCT:
+            class ComputeUnit:
+                ALL = "ALL"
+                CPU_AND_GPU = "CPU_AND_GPU"
+                CPU_ONLY = "CPU_ONLY"
+
+        with (
+            patch.object(CoreMLProvider, "_import_coremltools", return_value=_DummyCT()),
+            patch.object(CoreMLProvider, "_load_models", autospec=True, return_value=None),
+            patch.object(CoreMLProvider, "_warm_up_models", autospec=True, return_value=None),
+        ):
+            provider = CoreMLProvider(compute_units="CPU_ONLY")
+            assert provider.compute_units_name == "CPU_ONLY"

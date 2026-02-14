@@ -5,6 +5,7 @@ measuring RTF (Real-Time Factor) throughput with cold and warm runs.
 """
 
 import argparse
+import io
 import json
 import time
 import subprocess
@@ -17,6 +18,7 @@ import statistics
 import tempfile
 import wave
 import struct
+import numpy as np
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -168,6 +170,21 @@ class CaseResult:
     warm: Dict[str, Any]
 
 
+def _encode_wav_bytes(audio: np.ndarray, sample_rate: int) -> bytes:
+    """Encode mono float audio in [-1, 1] as 16-bit PCM WAV bytes."""
+    audio = np.asarray(audio, dtype=np.float32).reshape(-1)
+    clipped = np.clip(audio, -1.0, 1.0)
+    pcm = (clipped * 32767.0).astype(np.int16)
+
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(sample_rate)
+        wav_file.writeframes(pcm.tobytes())
+    return buffer.getvalue()
+
+
 def normalize_audio_result(result: Any) -> bytes:
     """Normalize various audio return formats to raw bytes.
     
@@ -180,19 +197,40 @@ def normalize_audio_result(result: Any) -> bytes:
     if isinstance(result, bytes):
         return result
     
+    if isinstance(result, np.ndarray):
+        return _encode_wav_bytes(result, 24000)
+    
     if isinstance(result, tuple):
-        # Assume (bytes, sample_rate)
-        return result[0]
+        # Common provider output: (audio_array, sample_rate)
+        audio = result[0]
+        sample_rate = int(result[1]) if len(result) > 1 else 24000
+        if isinstance(audio, bytes):
+            return audio
+        if isinstance(audio, np.ndarray):
+            return _encode_wav_bytes(audio, sample_rate)
+        return audio
     
     if isinstance(result, list):
+        if not result:
+            return b""
+
+        if all(
+            isinstance(chunk, tuple)
+            and len(chunk) >= 2
+            and isinstance(chunk[0], np.ndarray)
+        for chunk in result):
+            sample_rate = int(result[0][1])
+            merged_audio = np.concatenate(
+                [np.asarray(chunk[0], dtype=np.float32).reshape(-1) for chunk in result]
+            )
+            return _encode_wav_bytes(merged_audio, sample_rate)
+
+        if len(result) == 1:
+            return normalize_audio_result(result[0])
+
         normalized_chunks = []
         for chunk in result:
-            if isinstance(chunk, bytes):
-                normalized_chunks.append(chunk)
-            elif isinstance(chunk, tuple):
-                normalized_chunks.append(chunk[0])
-            else:
-                normalized_chunks.append(chunk)
+            normalized_chunks.append(normalize_audio_result(chunk))
         return b"".join(normalized_chunks)
     
     return result
@@ -240,14 +278,7 @@ def run_benchmark(
     
     provider_kwargs = {}
     if compute_units and provider_name == 'coreml':
-        import coremltools as ct
-        cu_map = {
-            'ALL': ct.ComputeUnit.ALL,
-            'CPU_AND_GPU': ct.ComputeUnit.CPU_AND_GPU,
-            'CPU_ONLY': ct.ComputeUnit.CPU_ONLY
-        }
-        if compute_units in cu_map:
-            provider_kwargs['compute_units'] = cu_map[compute_units]
+        provider_kwargs['compute_units'] = compute_units
     
     # Initialize provider
     provider = get_provider(provider_name, **provider_kwargs)

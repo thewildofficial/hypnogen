@@ -16,6 +16,7 @@ Start locally::
 from __future__ import annotations
 
 import os
+from contextlib import asynccontextmanager
 from typing import Protocol
 
 from fastapi import FastAPI, HTTPException
@@ -51,10 +52,16 @@ def create_app(
     store = job_store or JobStore()
     runner = job_runner or JobRunner(store)
 
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        yield
+        runner.shutdown(wait=False)
+
     app = FastAPI(
         title="Hypnogen Render Worker",
         version="0.1.0",
         description="Local-first render API for hypnosis audio generation.",
+        lifespan=lifespan,
     )
 
     # Store references on the app for shutdown hook
@@ -120,11 +127,6 @@ def create_app(
             raise HTTPException(status_code=404, detail="Job not found")
         store.cancel(job_id)
         return {"detail": "Job cancelled"}
-
-    @app.on_event("shutdown")
-    async def shutdown_event() -> None:
-        """Clean up thread pool on shutdown."""
-        runner.shutdown(wait=False)
 
     return app
 
