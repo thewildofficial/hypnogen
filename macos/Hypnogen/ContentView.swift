@@ -20,6 +20,7 @@ struct ContentView: View {
 
     @State private var selectedDestination: NavigationDestination?
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @State private var isInitialLoadComplete = false
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -30,9 +31,13 @@ struct ContentView: View {
         }
         .navigationSplitViewStyle(.balanced)
         .onChange(of: projectsViewModel.selectedProject) { _, newValue in
+            guard isInitialLoadComplete else { return }
             if let project = newValue {
                 selectedDestination = .projectEditor(project)
             }
+        }
+        .task {
+            isInitialLoadComplete = true
         }
         .sheet(isPresented: $onboardingViewModel.isPresented) {
             OnboardingView(viewModel: onboardingViewModel)
