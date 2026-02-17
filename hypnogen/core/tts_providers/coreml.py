@@ -334,6 +334,25 @@ class CoreMLProvider(TTSProvider):
                 + ", ".join(missing)
             )
 
+        # Narrow types: the check above guarantees these are str, but pyright
+        # cannot infer through the list comprehension pattern.
+        if input_ids_name is None:
+            raise ValueError("Duration model spec missing name for input_ids")
+        if ref_s_name is None:
+            raise ValueError("Duration model spec missing name for ref_s")
+        if speed_name is None:
+            raise ValueError("Duration model spec missing name for speed")
+        if attention_mask_name is None:
+            raise ValueError("Duration model spec missing name for attention_mask")
+        if pred_dur_name is None:
+            raise ValueError("Duration model spec missing name for pred_dur")
+        if d_name is None:
+            raise ValueError("Duration model spec missing name for d")
+        if t_en_name is None:
+            raise ValueError("Duration model spec missing name for t_en")
+        if s_name is None:
+            raise ValueError("Duration model spec missing name for s")
+
         token_limit = MODEL_TOKEN_LIMIT_DEFAULT
         shape = input_shapes[input_ids_name]
         if shape:
@@ -384,6 +403,18 @@ class CoreMLProvider(TTSProvider):
             raise RuntimeError(
                 f"Decoder model '{bucket_name}' is missing expected features: {', '.join(missing)}"
             )
+
+        # Narrow types: pyright cannot infer through list comprehension guard above.
+        if asr_name is None:
+            raise ValueError(f"Decoder model '{bucket_name}' spec missing name for asr")
+        if f0_name is None:
+            raise ValueError(f"Decoder model '{bucket_name}' spec missing name for F0_pred")
+        if n_name is None:
+            raise ValueError(f"Decoder model '{bucket_name}' spec missing name for N_pred")
+        if ref_s_name is None:
+            raise ValueError(f"Decoder model '{bucket_name}' spec missing name for ref_s")
+        if waveform_name is None:
+            raise ValueError(f"Decoder model '{bucket_name}' spec missing name for waveform")
 
         asr_shape = input_shapes[asr_name]
         f0_shape = input_shapes[f0_name]
@@ -886,6 +917,18 @@ class CoreMLProvider(TTSProvider):
 
         waveform = self._as_feature_tensor(decoder_outputs[decoder_spec.waveform_name]).astype(np.float32).reshape(-1)
 
+        if waveform.ndim != 1:
+            raise ValueError(
+                f"Decoder waveform has unexpected shape {waveform.shape}, expected 1D"
+            )
+        waveform_max = float(np.max(np.abs(waveform))) if waveform.size > 0 else 0.0
+        if waveform_max > 1.0:
+            logger.warning(
+                "[CoreML] Waveform samples exceed [-1.0, 1.0] (max=%.4f), clipping",
+                waveform_max,
+            )
+            waveform = np.clip(waveform, -1.0, 1.0)
+
         target_samples = int(round(predicted_seconds * SAMPLE_RATE))
         if target_samples > 0:
             waveform = waveform[: min(target_samples, waveform.shape[0])]
@@ -916,7 +959,7 @@ class CoreMLProvider(TTSProvider):
             voice_pack_raw = pipeline.load_voice(voice)
         except Exception as exc:
             raise RuntimeError(f"Failed to load Kokoro voice embedding '{voice}'.") from exc
-        voice_pack = self._to_numpy(voice_pack_raw, dtype=np.float32)
+        voice_pack = self._to_numpy(voice_pack_raw, dtype=np.dtype(np.float32))
 
         chunks: list[np.ndarray] = []
         for result in pipeline(text, voice=voice, speed=speed, split_pattern=r"\n+"):
@@ -944,6 +987,14 @@ class CoreMLProvider(TTSProvider):
         voice: str = "af_heart",
         speed: float = 1.0,
     ) -> list[tuple[np.ndarray, int]]:
+        for index, text in enumerate(texts):
+            if not isinstance(text, str) or not text.strip():
+                raise ValueError(
+                    f"synthesize_batch: text at index {index} must be a non-empty string"
+                )
+        if speed <= 0:
+            raise ValueError("synthesize_batch: speed must be positive")
+
         outputs: list[tuple[np.ndarray, int]] = []
         for index, text in enumerate(texts):
             try:
