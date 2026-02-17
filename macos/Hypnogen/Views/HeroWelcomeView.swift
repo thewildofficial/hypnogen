@@ -17,29 +17,24 @@ struct HeroWelcomeView: View {
 
     var body: some View {
         ZStack {
-            heroBackground
+            breathingCircles
             heroContent
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear {
+        .task {
+            appeared = true
             if !reduceMotion {
-                breathPhase = true
-                withAnimation(.easeOut(duration: 0.8)) {
-                    appeared = true
+                withAnimation(AnimationTokens.breathing) {
+                    breathPhase = true
                 }
-            } else {
-                appeared = true
             }
         }
     }
 
-    // MARK: - Background
+    // MARK: - Breathing Circle Effects (background provided by ContentView)
 
-    private var heroBackground: some View {
+    private var breathingCircles: some View {
         ZStack {
-            GradientTokens.heroGradient
-                .ignoresSafeArea()
-
             Circle()
                 .fill(
                     RadialGradient.fade(
@@ -121,6 +116,7 @@ struct HeroWelcomeView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 48, height: 48)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                 Text("Hypnogen")
                     .heroTitle()
