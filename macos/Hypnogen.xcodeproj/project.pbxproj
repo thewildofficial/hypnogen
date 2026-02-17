@@ -34,6 +34,7 @@
 		A100000025 /* WorkerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000025; };
 		A100000026 /* WorkerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000026; };
 		A100000027 /* WorkerStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000027; };
+		A100000038 /* GlassEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000038; };
 		A200000001 /* HypnogenUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000001; };
 		A200000002 /* ScreenshotHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000002; };
 		A200000003 /* OnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000003; };
@@ -89,6 +90,7 @@
 		B100000025 /* WorkerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerManager.swift; sourceTree = "<group>"; };
 		B100000026 /* WorkerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerViewModel.swift; sourceTree = "<group>"; };
 		B100000027 /* WorkerStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerStatusView.swift; sourceTree = "<group>"; };
+		B100000038 /* GlassEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassEffects.swift; sourceTree = "<group>"; };
 		B200000001 /* HypnogenUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HypnogenUITests.swift; sourceTree = "<group>"; };
 		B200000002 /* ScreenshotHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotHelper.swift; sourceTree = "<group>"; };
 		B200000003 /* OnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingTests.swift; sourceTree = "<group>"; };
@@ -147,6 +149,7 @@
 				E100000005 /* ViewModels */,
 				E100000006 /* Views */,
 				E100000007 /* Resources */,
+				E100000009 /* DesignSystem */,
 			);
 			path = Hypnogen;
 			sourceTree = "<group>";
@@ -240,6 +243,14 @@
 				B300000001 /* SnapshotTestCase.swift */,
 			);
 			path = HypnogenSnapshotTests;
+			sourceTree = "<group>";
+		};
+		E100000009 /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				B100000038 /* GlassEffects.swift */,
+			);
+			path = DesignSystem;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -403,6 +414,7 @@
 				A100000025 /* WorkerManager.swift in Sources */,
 				A100000026 /* WorkerViewModel.swift in Sources */,
 				A100000027 /* WorkerStatusView.swift in Sources */,
+				A100000038 /* GlassEffects.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

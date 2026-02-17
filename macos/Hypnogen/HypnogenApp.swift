@@ -15,6 +15,11 @@ extension Color {
     static let accentSecondary = Color("AccentSecondary")
     static let textPrimary = Color("TextPrimary")
     static let textSecondary = Color("TextSecondary")
+    // Aliases used by GlassEffects (maps to existing tokens until full DesignSystem integration)
+    static let accentViolet = Color("AccentPrimary")
+    static let accentGlow = Color("AccentSecondary")
+    static let surfacePrimary = Color("Surface")
+    static let textAccent = Color("AccentPrimary")
 }
 
 enum Radius {
