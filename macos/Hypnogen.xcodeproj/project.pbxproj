@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A100000028 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B100000028; };
 		A100000001 /* HypnogenApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000001; };
 		A100000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000002; };
 		A100000003 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000003; };
@@ -80,6 +81,7 @@
 		B100000025 /* WorkerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerManager.swift; sourceTree = "<group>"; };
 		B100000026 /* WorkerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerViewModel.swift; sourceTree = "<group>"; };
 		B100000027 /* WorkerStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerStatusView.swift; sourceTree = "<group>"; };
+		B100000028 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B200000001 /* HypnogenUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HypnogenUITests.swift; sourceTree = "<group>"; };
 		B200000002 /* ScreenshotHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotHelper.swift; sourceTree = "<group>"; };
 		B200000003 /* OnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingTests.swift; sourceTree = "<group>"; };
@@ -122,6 +124,7 @@
 			children = (
 				B100000001 /* HypnogenApp.swift */,
 				B100000002 /* ContentView.swift */,
+				B100000028 /* Assets.xcassets */,
 				E100000003 /* Models */,
 				E100000004 /* Services */,
 				E100000005 /* ViewModels */,
@@ -294,6 +297,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A100000028 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -369,7 +373,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -431,7 +435,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
