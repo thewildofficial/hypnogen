@@ -1,0 +1,122 @@
+{
+  "timestamp": "2026-02-18T01:58:24",
+  "git_sha": "fc54b7e",
+  "machine_info": {
+    "platform": "unknown",
+    "hardware": "unknown",
+    "cpu": "unknown",
+    "memory_gb": 0,
+    "error": "0"
+  },
+  "config": {
+    "provider": "quantized",
+    "compute_units": null,
+    "voice": "af_heart",
+    "warm_repeats": 5,
+    "corpus_version": "1.0"
+  },
+  "runs": [
+    {
+      "case_id": "short_relaxation",
+      "cold": {
+        "wall_time_sec": 13.106328207999468,
+        "audio_duration_sec": 36.425,
+        "rtf": 2.77919180886741,
+        "sanity_checks_passed": true,
+        "sanity_details": {
+          "passed": true,
+          "checks": {
+            "non_empty": true,
+            "valid_wav": true,
+            "no_nan_inf": true,
+            "duration_in_bounds": true,
+            "no_clipping": true
+          },
+          "duration_sec": 36.425,
+          "error": null
+        }
+      },
+      "warm": {
+        "mean_wall_time_sec": 7.747764283203287,
+        "std_wall_time_sec": 0.6432596101231934,
+        "mean_rtf": 4.701356245306447,
+        "repeats": 5,
+        "all_times": [
+          8.83607054100139,
+          7.467184499997529,
+          7.690690375005943,
+          7.60373770800652,
+          7.141138292005053
+        ]
+      }
+    },
+    {
+      "case_id": "medium_confidence",
+      "cold": {
+        "wall_time_sec": 15.518922417002614,
+        "audio_duration_sec": 59.675,
+        "rtf": 3.845305646648491,
+        "sanity_checks_passed": true,
+        "sanity_details": {
+          "passed": true,
+          "checks": {
+            "non_empty": true,
+            "valid_wav": true,
+            "no_nan_inf": true,
+            "duration_in_bounds": true,
+            "no_clipping": true
+          },
+          "duration_sec": 59.675,
+          "error": null
+        }
+      },
+      "warm": {
+        "mean_wall_time_sec": 15.599338275199989,
+        "std_wall_time_sec": 5.54854256179589,
+        "mean_rtf": 3.8254827831301035,
+        "repeats": 5,
+        "all_times": [
+          13.199374167001224,
+          25.519971999994596,
+          13.11320516699925,
+          13.319093500002054,
+          12.84504654200282
+        ]
+      }
+    },
+    {
+      "case_id": "long_sleep",
+      "cold": {
+        "wall_time_sec": 18.40102254100202,
+        "audio_duration_sec": 82.425,
+        "rtf": 4.47937063368825,
+        "sanity_checks_passed": true,
+        "sanity_details": {
+          "passed": true,
+          "checks": {
+            "non_empty": true,
+            "valid_wav": true,
+            "no_nan_inf": true,
+            "duration_in_bounds": true,
+            "no_clipping": true
+          },
+          "duration_sec": 82.425,
+          "error": null
+        }
+      },
+      "warm": {
+        "mean_wall_time_sec": 30.21145949159982,
+        "std_wall_time_sec": 3.272923927509882,
+        "mean_rtf": 2.728269384765008,
+        "repeats": 5,
+        "all_times": [
+          24.516696624996257,
+          32.64922825001122,
+          31.546168375003617,
+          30.522200124993105,
+          31.823004082994885
+        ]
+      }
+    }
+  ]
+}
