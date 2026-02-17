@@ -1,0 +1,13 @@
+{
+  "include": ["hypnogen"],
+  "typeCheckingMode": "basic",
+  "pythonVersion": "3.12",
+  "reportMissingTypeStubs": false,
+  "reportMissingModuleSource": false,
+  "executionEnvironments": [
+    {
+      "root": "hypnogen/core/tts_providers",
+      "typeCheckingMode": "strict"
+    }
+  ]
+}
