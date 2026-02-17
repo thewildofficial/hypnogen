@@ -41,6 +41,13 @@
 		A200000004 /* ProjectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000004; };
 		A200000005 /* RenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000005; };
 		A200000006 /* LibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000006; };
+		A300000001 /* ColorTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000001; };
+		A300000002 /* ButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000002; };
+		A300000003 /* CardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000003; };
+		A300000004 /* PanelStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000004; };
+		A300000005 /* SpacingTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000005; };
+		A300000006 /* RadiusTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000006; };
+		A300000007 /* ShadowTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000007; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -90,6 +97,13 @@
 		B200000006 /* LibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryTests.swift; sourceTree = "<group>"; };
 		C100000001 /* Hypnogen.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hypnogen.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C200000001 /* HypnogenUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HypnogenUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B300000001 /* ColorTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTokens.swift; sourceTree = "<group>"; };
+		B300000002 /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
+		B300000003 /* CardStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStyle.swift; sourceTree = "<group>"; };
+		B300000004 /* PanelStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelStyle.swift; sourceTree = "<group>"; };
+		B300000005 /* SpacingTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacingTokens.swift; sourceTree = "<group>"; };
+		B300000006 /* RadiusTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadiusTokens.swift; sourceTree = "<group>"; };
+		B300000007 /* ShadowTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadowTokens.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,6 +139,7 @@
 				B100000001 /* HypnogenApp.swift */,
 				B100000002 /* ContentView.swift */,
 				B100000028 /* Assets.xcassets */,
+				E100000009 /* DesignSystem */,
 				E100000003 /* Models */,
 				E100000004 /* Services */,
 				E100000005 /* ViewModels */,
@@ -132,6 +147,20 @@
 				E100000007 /* Resources */,
 			);
 			path = Hypnogen;
+			sourceTree = "<group>";
+		};
+		E100000009 /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				B300000001 /* ColorTokens.swift */,
+				B300000002 /* ButtonStyles.swift */,
+				B300000003 /* CardStyle.swift */,
+				B300000004 /* PanelStyle.swift */,
+				B300000005 /* SpacingTokens.swift */,
+				B300000006 /* RadiusTokens.swift */,
+				B300000007 /* ShadowTokens.swift */,
+			);
+			path = DesignSystem;
 			sourceTree = "<group>";
 		};
 		E100000003 /* Models */ = {
@@ -342,6 +371,13 @@
 				A100000025 /* WorkerManager.swift in Sources */,
 				A100000026 /* WorkerViewModel.swift in Sources */,
 				A100000027 /* WorkerStatusView.swift in Sources */,
+				A300000001 /* ColorTokens.swift in Sources */,
+				A300000002 /* ButtonStyles.swift in Sources */,
+				A300000003 /* CardStyle.swift in Sources */,
+				A300000004 /* PanelStyle.swift in Sources */,
+				A300000005 /* SpacingTokens.swift in Sources */,
+				A300000006 /* RadiusTokens.swift in Sources */,
+				A300000007 /* ShadowTokens.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
