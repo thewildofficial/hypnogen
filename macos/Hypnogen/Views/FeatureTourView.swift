@@ -11,13 +11,12 @@ struct FeatureTourView: View {
     var body: some View {
         VStack(spacing: 0) {
             tourPageContent
-            Spacer(minLength: 16)
+            Spacer(minLength: Spacing.md)
             pageIndicator
-                .padding(.bottom, 8)
+                .padding(.bottom, Spacing.sm)
             navigationButtons
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.canvas)
         .accessibilityIdentifier(Constants.Accessibility.Onboarding.featureTourContainer)
     }
 
@@ -27,32 +26,52 @@ struct FeatureTourView: View {
     private var tourPageContent: some View {
         let page = FeatureTourContent.pages[viewModel.currentTourPage]
 
-        VStack(spacing: 16) {
-            Image(systemName: page.sfSymbol)
-                .font(.system(size: 56))
-                .foregroundStyle(Color.accentPrimary)
-                .symbolRenderingMode(.hierarchical)
-                .accessibilityHidden(true)
+        VStack(spacing: Spacing.md) {
+            ZStack {
+                Circle()
+                    .fill(Color.accentPrimary.opacity(0.12))
+                    .frame(width: 96, height: 96)
+
+                Circle()
+                    .fill(Color.accentPrimary.opacity(0.06))
+                    .frame(width: 120, height: 120)
+
+                Image(systemName: page.sfSymbol)
+                    .font(.system(size: 44, weight: .medium))
+                    .foregroundStyle(LinearGradient.accentGradient)
+                    .symbolRenderingMode(.hierarchical)
+            }
+            .shadow(color: Color.accentPrimary.opacity(0.3), radius: 16, x: 0, y: 4)
+            .accessibilityHidden(true)
 
             Text(page.title)
-                .font(.title)
-                .fontWeight(.semibold)
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(Color.textPrimary)
                 .multilineTextAlignment(.center)
 
             Text(page.subtitle)
-                .font(.title3)
-                .foregroundStyle(Color.textSecondary)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Color.accentSecondary)
                 .multilineTextAlignment(.center)
 
-            Text(page.body)
-                .font(.body)
-                .foregroundStyle(Color.textSecondary)
-                .multilineTextAlignment(.center)
-                .lineSpacing(4)
-                .frame(maxWidth: 420)
+            VStack {
+                Text(page.body)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(5)
+            }
+            .frame(maxWidth: 420)
+            .padding(Spacing.md)
+            .background(Color.surface.opacity(0.5))
+            .cornerRadius(Radius.md)
+            .overlay(
+                RoundedRectangle(cornerRadius: Radius.md)
+                    .stroke(Color.stroke.opacity(0.3), lineWidth: 1)
+            )
         }
-        .padding(.horizontal, 32)
-        .padding(.top, 24)
+        .padding(.horizontal, Spacing.xl)
+        .padding(.top, Spacing.lg)
         .accessibilityIdentifier(
             "\(Constants.Accessibility.Onboarding.featureTourPage)_\(viewModel.currentTourPage)"
         )
@@ -62,12 +81,13 @@ struct FeatureTourView: View {
     // MARK: - Page Indicator
 
     private var pageIndicator: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Spacing.sm) {
             ForEach(0..<viewModel.tourPageCount, id: \.self) { index in
-                Circle()
-                    .fill(index == viewModel.currentTourPage ? Color.accentPrimary : Color.textSecondary.opacity(0.3))
-                    .frame(width: 8, height: 8)
-                    .animation(.easeInOut(duration: 0.2), value: viewModel.currentTourPage)
+                let isActive = index == viewModel.currentTourPage
+                Capsule()
+                    .fill(isActive ? Color.accentPrimary : Color.stroke)
+                    .frame(width: isActive ? 20 : 8, height: 8)
+                    .animation(.easeInOut(duration: 0.25), value: viewModel.currentTourPage)
             }
         }
         .accessibilityElement(children: .ignore)
@@ -81,6 +101,7 @@ struct FeatureTourView: View {
             Button("Previous") {
                 viewModel.previousTourPage()
             }
+            .buttonStyle(SecondaryButtonStyle())
             .disabled(viewModel.isOnFirstTourPage)
             .accessibilityIdentifier(Constants.Accessibility.Onboarding.previousButton)
 
@@ -89,10 +110,10 @@ struct FeatureTourView: View {
             Button(viewModel.isOnLastTourPage ? "Continue to Tips" : "Next") {
                 viewModel.nextTourPage()
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(PrimaryButtonStyle())
             .accessibilityIdentifier(Constants.Accessibility.Onboarding.nextButton)
         }
-        .padding(.horizontal, 32)
-        .padding(.bottom, 8)
+        .padding(.horizontal, Spacing.xl)
+        .padding(.bottom, Spacing.sm)
     }
 }

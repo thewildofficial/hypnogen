@@ -28,7 +28,6 @@ struct HypnogenApp: App {
                     onboardingViewModel.showOnboarding()
                 }
             }
-            // Show calibration after onboarding dismisses (first launch only)
             .onChange(of: onboardingViewModel.isPresented) { _, isPresented in
                 if !isPresented && calibrationViewModel.shouldShowOnFirstLaunch {
                     calibrationViewModel.startCalibration()

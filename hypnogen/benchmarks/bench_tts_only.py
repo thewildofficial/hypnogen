@@ -392,7 +392,7 @@ def main():
     )
     parser.add_argument(
         '--provider',
-        choices=['pytorch', 'coreml'],
+        choices=['pytorch', 'coreml', 'quantized'],
         required=True,
         help='TTS provider to benchmark'
     )

@@ -1,67 +1,68 @@
 import SwiftUI
 
-// MARK: - Deep Violet/Indigo Palette
+// MARK: - Color Tokens
+// Hardcoded values used instead of Color("Name") because named color
+// lookups from Asset Catalogs fail silently at runtime (returning clear),
+// even when the .car file contains correct color data.
 
 extension Color {
     // MARK: Backgrounds
 
     /// Near-black purple background (#0D0D1A)
-    static let backgroundDeep = Color("BackgroundDeep")
+    static let backgroundDeep = Color(red: 0.051, green: 0.051, blue: 0.102)
 
     /// Deep violet mid-layer background (#1A1A2E)
-    static let backgroundMid = Color("BackgroundMid")
+    static let backgroundMid = Color(red: 0.102, green: 0.102, blue: 0.180)
 
     /// Mid violet elevated background (#2D2D4A)
-    static let backgroundLight = Color("BackgroundLight")
+    static let backgroundLight = Color(red: 0.176, green: 0.176, blue: 0.290)
 
     // MARK: Surfaces
 
     /// Elevated surface for cards and panels (#2A2A4A)
-    static let surfacePrimary = Color("SurfacePrimary")
+    static let surfacePrimary = Color(red: 0.165, green: 0.165, blue: 0.290)
 
     /// Secondary surface for nested elements (#3D3D5C)
-    static let surfaceSecondary = Color("SurfaceSecondary")
+    static let surfaceSecondary = Color(red: 0.239, green: 0.239, blue: 0.361)
 
     // MARK: Accents
 
     /// Bright violet primary accent (#8B5CF6)
-    static let accentViolet = Color("AccentViolet")
+    static let accentViolet = Color(red: 0.545, green: 0.361, blue: 0.965)
 
     /// Indigo accent for secondary highlights (#6366F1)
-    static let accentIndigo = Color("AccentIndigo")
+    static let accentIndigo = Color(red: 0.388, green: 0.400, blue: 0.945)
 
     /// Soft glow violet for hover/active states (#A78BFA)
-    static let accentGlow = Color("AccentGlow")
+    static let accentGlow = Color(red: 0.655, green: 0.545, blue: 0.980)
 
     // MARK: Text
 
     /// Warm white primary text (#F5F5FF)
-    static let textPrimary = Color("TextPrimary")
+    static let textPrimary = Color(red: 0.961, green: 0.961, blue: 1.0)
 
     /// Muted violet-gray secondary text (#A5A5C0)
-    static let textSecondary = Color("TextSecondary")
+    static let textSecondary = Color(red: 0.647, green: 0.647, blue: 0.753)
 
     /// Light violet accent text (#C4B5FD)
-    static let textAccent = Color("TextAccent")
-}
+    static let textAccent = Color(red: 0.769, green: 0.706, blue: 0.988)
 
-// MARK: - Backward-Compatible Aliases
+    // MARK: Backward-Compatible Aliases
 
-extension Color {
-    /// Alias: canvas → backgroundDeep (was #0C0F2C, now #0D0D1A)
-    static let canvas = Color("BackgroundDeep")
+    /// Alias: canvas → backgroundDeep
+    static let canvas = backgroundDeep
 
-    /// Alias: surface → surfacePrimary (was #1E245C, now #2A2A4A)
-    static let surface = Color("SurfacePrimary")
+    /// Alias: surface → surfacePrimary
+    static let surface = surfacePrimary
 
-    /// Alias: stroke → surfaceSecondary (was #314F84, now #3D3D5C)
-    static let stroke = Color("SurfaceSecondary")
+    /// Alias: stroke → surfaceSecondary
+    static let stroke = surfaceSecondary
 
-    /// Alias: accentPrimary → accentViolet (was #5FA9C9, now #8B5CF6)
-    static let accentPrimary = Color("AccentViolet")
+    /// Alias: accentPrimary → accentViolet
+    static let accentPrimary = accentViolet
 
-    /// Alias: accentSecondary → accentIndigo (was #82CDE0, now #6366F1)
-    static let accentSecondary = Color("AccentIndigo")
+    /// Alias: accentSecondary → accentIndigo
+    static let accentSecondary = accentIndigo
 }
 
 // MARK: - Gradient Presets

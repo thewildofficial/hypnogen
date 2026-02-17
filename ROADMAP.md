@@ -67,6 +67,20 @@ Current execution state lives in [`STATUS.md`](STATUS.md). Pending GitHub issue 
 - Tighten progress/ETA quality so queue estimates remain stable for longer sessions.
 - Reduce repeated work via caching opportunities where deterministic inputs permit reuse.
 
+### TTS Runtime Decision (v0.1)
+
+**Default provider: PyTorch** — selected based on benchmark matrix across PyTorch, CoreML, and Quantized (ONNX int8) providers on M2 Air.
+
+| Criterion | Result |
+| --- | --- |
+| Decision | PyTorch as default TTS runtime |
+| Rationale | 100% sanity pass rate, predictable performance (warm RTF 4.94, StdDev 1.89s), no additional dependencies |
+| Fallback chain | `pytorch → quantized → error` (CoreML excluded due to 0% sanity pass) |
+| RTF target (≤ 2.0) | **Not met by any correct provider** — CoreML ALL achieves 2.43 but fails sanity checks; Quantized achieves 3.75; PyTorch achieves 4.94 |
+| Re-evaluate when | CoreML correctness fix lands, quantized variance stabilises, or new provider (Swift-native Kokoro) becomes available |
+
+Full analysis: [`.sisyphus/evidence/runtime-decision.md`](.sisyphus/evidence/runtime-decision.md) · Benchmark data: [`.sisyphus/evidence/benchmark-matrix-report.md`](.sisyphus/evidence/benchmark-matrix-report.md)
+
 ### v1 - SaaS Deploy Target (Linux/CUDA)
 
 - Deploy GPU-backed render workers (Linux/CUDA) behind the same Render Job API contract.
