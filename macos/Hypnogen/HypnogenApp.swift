@@ -5,40 +5,6 @@
 
 import SwiftUI
 
-// MARK: - Design System Color Tokens (Temporary - until DesignSystem files added to Xcode project)
-
-extension Color {
-    static let canvas = Color("Canvas")
-    static let surface = Color("Surface")
-    static let stroke = Color("Stroke")
-    static let accentPrimary = Color("AccentPrimary")
-    static let accentSecondary = Color("AccentSecondary")
-    static let textPrimary = Color("TextPrimary")
-    static let textSecondary = Color("TextSecondary")
-    // Aliases used by GlassEffects (maps to existing tokens until full DesignSystem integration)
-    static let accentViolet = Color("AccentPrimary")
-    static let accentGlow = Color("AccentSecondary")
-    static let surfacePrimary = Color("Surface")
-    static let textAccent = Color("AccentPrimary")
-}
-
-enum Radius {
-    static let sm: CGFloat = 6
-    static let md: CGFloat = 12
-    static let lg: CGFloat = 18
-}
-
-struct PrimaryButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(Color.accentPrimary)
-            .foregroundColor(Color.canvas)
-            .cornerRadius(6)
-    }
-}
-
 @main
 struct HypnogenApp: App {
     @State private var projectsViewModel = ProjectsViewModel()

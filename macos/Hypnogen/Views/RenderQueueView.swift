@@ -54,19 +54,11 @@ struct RenderQueueView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "list.bullet.clipboard")
-                .font(.system(size: 48))
-                .foregroundStyle(Color.textSecondary)
-            Text("No Render Jobs")
-                .font(.title3)
-                .foregroundStyle(Color.textSecondary)
-            Text("Open a project and click Render to start")
-                .font(.caption)
-                .foregroundStyle(Color.textSecondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.canvas)
+        EmptyStateView(
+            icon: "list.bullet.clipboard",
+            title: "No Render Jobs",
+            description: "Open a project and click Render to start"
+        )
     }
 }
 

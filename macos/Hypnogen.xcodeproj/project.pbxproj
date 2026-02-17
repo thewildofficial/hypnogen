@@ -35,6 +35,19 @@
 		A100000026 /* WorkerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000026; };
 		A100000027 /* WorkerStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000027; };
 		A100000038 /* GlassEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000038; };
+		A100000039 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000039; };
+		A100000040 /* HeroWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000040; };
+		A100000041 /* SidebarRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000041; };
+		A100000042 /* PanelStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000042; };
+		A100000043 /* ButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000043; };
+		A100000044 /* CardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000044; };
+		A100000045 /* GradientTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000045; };
+		A100000046 /* TypographyTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000046; };
+		A100000047 /* ShadowTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000047; };
+		A100000048 /* AnimationTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000048; };
+		A100000049 /* ColorTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000049; };
+		A100000050 /* RadiusTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000050; };
+		A100000051 /* SpacingTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000051; };
 		A200000001 /* HypnogenUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000001; };
 		A200000002 /* ScreenshotHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000002; };
 		A200000003 /* OnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000003; };
@@ -91,6 +104,19 @@
 		B100000026 /* WorkerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerViewModel.swift; sourceTree = "<group>"; };
 		B100000027 /* WorkerStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerStatusView.swift; sourceTree = "<group>"; };
 		B100000038 /* GlassEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassEffects.swift; sourceTree = "<group>"; };
+		B100000039 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		B100000040 /* HeroWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroWelcomeView.swift; sourceTree = "<group>"; };
+		B100000041 /* SidebarRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarRowView.swift; sourceTree = "<group>"; };
+		B100000042 /* PanelStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelStyle.swift; sourceTree = "<group>"; };
+		B100000043 /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
+		B100000044 /* CardStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStyle.swift; sourceTree = "<group>"; };
+		B100000045 /* GradientTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientTokens.swift; sourceTree = "<group>"; };
+		B100000046 /* TypographyTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypographyTokens.swift; sourceTree = "<group>"; };
+		B100000047 /* ShadowTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadowTokens.swift; sourceTree = "<group>"; };
+		B100000048 /* AnimationTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationTokens.swift; sourceTree = "<group>"; };
+		B100000049 /* ColorTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTokens.swift; sourceTree = "<group>"; };
+		B100000050 /* RadiusTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadiusTokens.swift; sourceTree = "<group>"; };
+		B100000051 /* SpacingTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacingTokens.swift; sourceTree = "<group>"; };
 		B200000001 /* HypnogenUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HypnogenUITests.swift; sourceTree = "<group>"; };
 		B200000002 /* ScreenshotHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotHelper.swift; sourceTree = "<group>"; };
 		B200000003 /* OnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingTests.swift; sourceTree = "<group>"; };
@@ -202,6 +228,9 @@
 				B100000020 /* TroubleshootingView.swift */,
 				B100000024 /* CalibrationView.swift */,
 				B100000027 /* WorkerStatusView.swift */,
+				B100000039 /* EmptyStateView.swift */,
+				B100000040 /* HeroWelcomeView.swift */,
+				B100000041 /* SidebarRowView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -249,6 +278,16 @@
 			isa = PBXGroup;
 			children = (
 				B100000038 /* GlassEffects.swift */,
+				B100000042 /* PanelStyle.swift */,
+				B100000043 /* ButtonStyles.swift */,
+				B100000044 /* CardStyle.swift */,
+				B100000045 /* GradientTokens.swift */,
+				B100000046 /* TypographyTokens.swift */,
+				B100000047 /* ShadowTokens.swift */,
+				B100000048 /* AnimationTokens.swift */,
+				B100000049 /* ColorTokens.swift */,
+				B100000050 /* RadiusTokens.swift */,
+				B100000051 /* SpacingTokens.swift */,
 			);
 			path = DesignSystem;
 			sourceTree = "<group>";
@@ -415,6 +454,19 @@
 				A100000026 /* WorkerViewModel.swift in Sources */,
 				A100000027 /* WorkerStatusView.swift in Sources */,
 				A100000038 /* GlassEffects.swift in Sources */,
+				A100000039 /* EmptyStateView.swift in Sources */,
+				A100000040 /* HeroWelcomeView.swift in Sources */,
+				A100000041 /* SidebarRowView.swift in Sources */,
+				A100000042 /* PanelStyle.swift in Sources */,
+				A100000043 /* ButtonStyles.swift in Sources */,
+				A100000044 /* CardStyle.swift in Sources */,
+				A100000045 /* GradientTokens.swift in Sources */,
+				A100000046 /* TypographyTokens.swift in Sources */,
+				A100000047 /* ShadowTokens.swift in Sources */,
+				A100000048 /* AnimationTokens.swift in Sources */,
+				A100000049 /* ColorTokens.swift in Sources */,
+				A100000050 /* RadiusTokens.swift in Sources */,
+				A100000051 /* SpacingTokens.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -48,19 +48,11 @@ struct OutputsLibraryView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "music.note.list")
-                .font(.system(size: 48))
-                .foregroundStyle(Color.textSecondary)
-            Text("No Outputs")
-                .font(.title3)
-                .foregroundStyle(Color.textPrimary)
-            Text("Completed renders will appear here")
-                .font(.caption)
-                .foregroundStyle(Color.textSecondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.canvas)
+        EmptyStateView(
+            icon: "music.note.list",
+            title: "No Outputs",
+            description: "Completed renders will appear here"
+        )
     }
 }
 

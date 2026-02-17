@@ -70,18 +70,12 @@ struct ProjectsView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "doc.badge.plus")
-                .font(.system(size: 40))
-                .foregroundStyle(Color.textSecondary)
-            Text("No Projects")
-                .font(.title3)
-                .foregroundStyle(Color.textSecondary)
-            Text("Create your first hypnosis project")
-                .font(.caption)
-                .foregroundStyle(Color.textSecondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.canvas)
+        EmptyStateView(
+            icon: "doc.badge.plus",
+            title: "No Projects",
+            description: "Create your first hypnosis project",
+            ctaTitle: "New Project",
+            ctaAction: { viewModel.createProject() }
+        )
     }
 }
