@@ -48,6 +48,7 @@
 		A100000049 /* ColorTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000049; };
 		A100000050 /* RadiusTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000050; };
 		A100000051 /* SpacingTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000051; };
+		A100000052 /* ProjectRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000052; };
 		A200000001 /* HypnogenUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000001; };
 		A200000002 /* ScreenshotHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000002; };
 		A200000003 /* OnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000003; };
@@ -117,6 +118,7 @@
 		B100000049 /* ColorTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTokens.swift; sourceTree = "<group>"; };
 		B100000050 /* RadiusTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadiusTokens.swift; sourceTree = "<group>"; };
 		B100000051 /* SpacingTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacingTokens.swift; sourceTree = "<group>"; };
+		B100000052 /* ProjectRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectRowView.swift; sourceTree = "<group>"; };
 		B200000001 /* HypnogenUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HypnogenUITests.swift; sourceTree = "<group>"; };
 		B200000002 /* ScreenshotHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotHelper.swift; sourceTree = "<group>"; };
 		B200000003 /* OnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingTests.swift; sourceTree = "<group>"; };
@@ -231,6 +233,7 @@
 				B100000039 /* EmptyStateView.swift */,
 				B100000040 /* HeroWelcomeView.swift */,
 				B100000041 /* SidebarRowView.swift */,
+				B100000052 /* ProjectRowView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -467,6 +470,7 @@
 				A100000049 /* ColorTokens.swift in Sources */,
 				A100000050 /* RadiusTokens.swift in Sources */,
 				A100000051 /* SpacingTokens.swift in Sources */,
+				A100000052 /* ProjectRowView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

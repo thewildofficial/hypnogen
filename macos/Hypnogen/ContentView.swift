@@ -93,9 +93,8 @@ struct ContentView: View {
 
         VStack(alignment: .leading, spacing: 2) {
             ForEach(projectsViewModel.projects) { project in
-                SidebarRowView(
-                    icon: "waveform",
-                    label: project.name,
+                ProjectRowView(
+                    project: project,
                     isSelected: selectedDestination == .projectEditor(project)
                 )
                 .accessibilityIdentifier("\(Constants.Accessibility.projectRow)_\(project.id)")
@@ -242,23 +241,5 @@ struct ContentView: View {
             }
         )
         .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .center)))
-    }
-}
-
-// MARK: - Project Row
-
-struct ProjectRowView: View {
-    let project: Project
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(project.name)
-                .font(.headline)
-                .lineLimit(1)
-            Text(project.modifiedAt.formatted(date: .abbreviated, time: .shortened))
-                .font(.caption)
-                .foregroundStyle(Color.textSecondary)
-        }
-        .padding(.vertical, 2)
     }
 }
