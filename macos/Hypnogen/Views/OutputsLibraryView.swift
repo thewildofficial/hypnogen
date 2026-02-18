@@ -1,17 +1,17 @@
 // OutputsLibraryView.swift
 // Hypnogen
 //
-// Grid view of completed render outputs with preview and Finder reveal.
+// Premium grid view of completed render outputs with preview and Finder reveal.
 
 import SwiftUI
 
-private let gridItemMinWidth: CGFloat = 200
+private let gridItemMinWidth: CGFloat = 240
 
 struct OutputsLibraryView: View {
     var viewModel: OutputsLibraryViewModel
 
     private let columns = [
-        GridItem(.adaptive(minimum: gridItemMinWidth), spacing: 16)
+        GridItem(.adaptive(minimum: gridItemMinWidth), spacing: Spacing.lg)
     ]
 
     var body: some View {
@@ -22,45 +22,74 @@ struct OutputsLibraryView: View {
                 outputsGrid
             }
         }
-        .background(Color.canvas)
+        .background(LinearGradient.canvasGradient)
         .navigationTitle("Outputs Library")
         .accessibilityIdentifier(Constants.Accessibility.outputsGrid)
+    }
+
+    // MARK: - Grid Header
+
+    private var gridHeader: some View {
+        HStack(spacing: Spacing.sm) {
+            Text("\(viewModel.outputs.count) Output\(viewModel.outputs.count == 1 ? "" : "s")")
+                .font(Typography.bodyBold)
+                .foregroundStyle(Color.textPrimary)
+
+            Spacer()
+
+            // Placeholder filter/sort controls
+            HStack(spacing: Spacing.xs) {
+                Button {
+                    // Sort — placeholder
+                } label: {
+                    Label("Sort", systemImage: "arrow.up.arrow.down")
+                }
+                .ghostButtonStyle(size: .small)
+
+                Button {
+                    // Filter — placeholder
+                } label: {
+                    Label("Filter", systemImage: "line.3.horizontal.decrease")
+                }
+                .ghostButtonStyle(size: .small)
+            }
+        }
+        .padding(.horizontal, Spacing.lg)
+        .padding(.top, Spacing.lg)
+        .padding(.bottom, Spacing.sm)
     }
 
     // MARK: - Grid
 
     private var outputsGrid: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 16) {
-                ForEach(viewModel.outputs) { output in
-                    OutputCardView(output: output, onReveal: {
-                        if let url = output.mixURL {
-                            viewModel.revealInFinder(url)
-                        }
-                    })
-                    .accessibilityIdentifier("\(Constants.Accessibility.outputItem)_\(output.id)")
+            VStack(spacing: 0) {
+                gridHeader
+
+                LazyVGrid(columns: columns, spacing: Spacing.lg) {
+                    ForEach(viewModel.outputs) { output in
+                        OutputCardView(output: output, onReveal: {
+                            if let url = output.mixURL {
+                                viewModel.revealInFinder(url)
+                            }
+                        })
+                        .accessibilityIdentifier("\(Constants.Accessibility.outputItem)_\(output.id)")
+                    }
                 }
+                .padding(.horizontal, Spacing.lg)
+                .padding(.bottom, Spacing.lg)
             }
-            .padding()
         }
     }
 
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "music.note.list")
-                .font(.system(size: 48))
-                .foregroundStyle(Color.textSecondary)
-            Text("No Outputs")
-                .font(.title3)
-                .foregroundStyle(Color.textPrimary)
-            Text("Completed renders will appear here")
-                .font(.caption)
-                .foregroundStyle(Color.textSecondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.canvas)
+        EmptyStateView(
+            icon: "music.note.list",
+            title: "No Outputs",
+            description: "Completed renders will appear here"
+        )
     }
 }
 
@@ -71,50 +100,82 @@ struct OutputCardView: View {
     let onReveal: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Waveform placeholder
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.surface)
-                .frame(height: 80)
-                .overlay {
-                    Image(systemName: "waveform")
-                        .font(.title)
-                        .foregroundStyle(Color.textSecondary)
-                }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(output.projectName)
-                    .font(.headline)
-                    .lineLimit(1)
-
-                Text(output.completedAtFormatted)
-                    .font(.caption)
-                    .foregroundStyle(Color.textSecondary)
-            }
-
-            HStack(spacing: 8) {
-                if output.mixURL != nil {
-                    Button {
-                        // Playback will be implemented in a future task
-                    } label: {
-                        Label("Play", systemImage: "play.fill")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .accessibilityIdentifier("\(Constants.Accessibility.playOutputButton)_\(output.id)")
-                }
-
-                Button(action: onReveal) {
-                    Label("Reveal", systemImage: "folder")
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .accessibilityIdentifier("\(Constants.Accessibility.revealInFinderButton)_\(output.id)")
-            }
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            waveformPlaceholder
+            cardContent
+            cardActions
         }
-        .padding(12)
-        .background(Color.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        .interactiveCardStyle()
+    }
+
+    // MARK: - Waveform Visualization
+
+    private var waveformPlaceholder: some View {
+        RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color.accentViolet.opacity(0.25),
+                        Color.accentIndigo.opacity(0.18),
+                        Color.accentViolet.opacity(0.12),
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .frame(height: 88)
+            .overlay {
+                Image(systemName: "waveform")
+                    .font(.system(size: 28, weight: .light))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.accentGlow, Color.accentViolet.opacity(0.7)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .shadow(color: Color.accentGlow.opacity(0.4), radius: 8, x: 0, y: 0)
+            }
+    }
+
+    // MARK: - Content
+
+    private var cardContent: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            Text(output.projectName)
+                .font(Typography.sectionTitle)
+                .foregroundStyle(Color.textPrimary)
+                .tracking(Typography.trackingNormal)
+                .lineLimit(1)
+
+            Text(output.completedAtFormatted)
+                .font(Typography.captionText)
+                .foregroundStyle(Color.textSecondary.opacity(0.7))
+                .tracking(Typography.trackingWide)
+        }
+    }
+
+    // MARK: - Actions
+
+    private var cardActions: some View {
+        HStack(spacing: Spacing.sm) {
+            if output.mixURL != nil {
+                Button {
+                    // Playback will be implemented in a future task
+                } label: {
+                    ButtonLabel("Play", icon: "play.fill", size: .small)
+                }
+                .primaryButtonStyle(size: .small)
+                .accessibilityIdentifier("\(Constants.Accessibility.playOutputButton)_\(output.id)")
+            }
+
+            Button(action: onReveal) {
+                ButtonLabel("Reveal", icon: "folder", size: .small)
+            }
+            .secondaryButtonStyle(size: .small)
+            .accessibilityIdentifier("\(Constants.Accessibility.revealInFinderButton)_\(output.id)")
+
+            Spacer()
+        }
     }
 }

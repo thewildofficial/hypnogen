@@ -20,6 +20,17 @@ struct ContentView: View {
 
     @State private var selectedDestination: NavigationDestination?
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @State private var isInitialLoadComplete = false
+    @State private var projectToDelete: Project?
+
+    /// Whether the hero welcome should be shown instead of the selected destination.
+    private var shouldShowHero: Bool {
+        if selectedDestination == nil { return true }
+        if case .projectEditor = selectedDestination, projectsViewModel.projects.isEmpty {
+            return true
+        }
+        return false
+    }
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -29,13 +40,41 @@ struct ContentView: View {
             detailView
         }
         .navigationSplitViewStyle(.balanced)
+        .toolbarBackground(.hidden, for: .windowToolbar)
         .onChange(of: projectsViewModel.selectedProject) { _, newValue in
+            guard isInitialLoadComplete else { return }
             if let project = newValue {
                 selectedDestination = .projectEditor(project)
             }
         }
+        .onChange(of: projectsViewModel.projects.count) { _, newCount in
+            if newCount == 0 {
+                selectedDestination = nil
+            }
+        }
+        .task {
+            isInitialLoadComplete = true
+        }
         .sheet(isPresented: $onboardingViewModel.isPresented) {
             OnboardingView(viewModel: onboardingViewModel)
+        }
+        .confirmationDialog(
+            "Delete Project",
+            isPresented: Binding(
+                get: { projectToDelete != nil },
+                set: { if !$0 { projectToDelete = nil } }
+            ),
+            presenting: projectToDelete
+        ) { project in
+            Button("Delete", role: .destructive) {
+                projectsViewModel.deleteProject(project)
+                projectToDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                projectToDelete = nil
+            }
+        } message: { project in
+            Text("Are you sure you want to delete \"\(project.name)\"? This action cannot be undone.")
         }
     }
 
@@ -43,127 +82,221 @@ struct ContentView: View {
 
     @ViewBuilder
     private var sidebar: some View {
-        List(selection: $selectedDestination) {
-            Section {
-                ForEach(projectsViewModel.projects) { project in
-                    NavigationLink(value: NavigationDestination.projectEditor(project)) {
-                        ProjectRowView(project: project)
-                    }
-                    .accessibilityIdentifier("\(Constants.Accessibility.projectRow)_\(project.id)")
-                    .contextMenu {
-                        Button("Duplicate") {
-                            projectsViewModel.duplicateProject(project)
-                        }
-                        Divider()
-                        Button("Delete", role: .destructive) {
-                            projectsViewModel.deleteProject(project)
-                        }
-                    }
-                }
-            } header: {
-                HStack {
-                    Text("Projects")
-                    Spacer()
-                    Button {
-                        projectsViewModel.createProject()
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                    .buttonStyle(.borderless)
-                    .accessibilityIdentifier(Constants.Accessibility.newProjectButton)
-                }
-                .accessibilityIdentifier(Constants.Accessibility.sidebarProjectsSection)
-            }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                // ── Create ──────────────────────────────────
+                createSection
 
-            Section {
-                NavigationLink(value: NavigationDestination.renderQueue) {
-                    Label {
-                        Text("Render Queue")
-                    } icon: {
-                        Image(systemName: "list.bullet.clipboard")
-                    }
-                    .badge(renderQueueViewModel.activeJobCount)
-                }
-                .accessibilityIdentifier(Constants.Accessibility.sidebarRenderQueueSection)
-            }
+                SidebarDivider()
 
-            Section {
-                NavigationLink(value: NavigationDestination.outputsLibrary) {
-                    Label("Outputs Library", systemImage: "music.note.list")
+                // ── Studio ──────────────────────────────────
+                studioSection
+
+                SidebarDivider()
+
+                // ── Library ─────────────────────────────────
+                librarySection
+            }
+            .padding(.vertical, Spacing.sm)
+        }
+        .scrollContentBackground(.hidden)
+        .background(GradientTokens.sidebarGradient)
+        .navigationSplitViewColumnWidth(min: 200, ideal: 260, max: 350)
+        .accessibilityIdentifier(Constants.Accessibility.projectsList)
+    }
+
+    // MARK: - Create Section (Projects)
+
+    @ViewBuilder
+    private var createSection: some View {
+        HStack(spacing: Spacing.xs) {
+            SidebarSectionHeader(title: "Create")
+
+            Spacer(minLength: 0)
+
+            Button {
+                projectsViewModel.createProject()
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(Color.accentGlow)
+                    .symbolRenderingMode(.hierarchical)
+            }
+            .buttonStyle(.borderless)
+            .padding(.trailing, Spacing.sm + 2)
+            .padding(.top, Spacing.md)
+            .padding(.bottom, Spacing.xs)
+            .accessibilityIdentifier(Constants.Accessibility.newProjectButton)
+        }
+        .accessibilityIdentifier(Constants.Accessibility.sidebarProjectsSection)
+
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach(projectsViewModel.projects) { project in
+                ProjectRowView(
+                    project: project,
+                    isSelected: selectedDestination == .projectEditor(project)
+                )
+                .accessibilityIdentifier("\(Constants.Accessibility.projectRow)_\(project.id)")
+                .contentShape(RoundedRectangle(cornerRadius: Radius.sm))
+                .onTapGesture {
+                    withAnimation(AnimationTokens.springTransition) {
+                        selectedDestination = .projectEditor(project)
+                        projectsViewModel.selectedProject = project
+                    }
                 }
-                .accessibilityIdentifier(Constants.Accessibility.sidebarOutputsSection)
+                .contextMenu {
+                    Button("Duplicate") {
+                        projectsViewModel.duplicateProject(project)
+                    }
+                    Divider()
+                    Button("Delete", role: .destructive) {
+                        projectToDelete = project
+                    }
+                }
             }
         }
-        .listStyle(.sidebar)
-        .scrollContentBackground(.hidden)
-        .background(Color.canvas)
-        .navigationSplitViewColumnWidth(min: 200, ideal: 250, max: 350)
-        .accessibilityIdentifier(Constants.Accessibility.projectsList)
+    }
+
+    // MARK: - Studio Section (Render Queue + Worker Status)
+
+    @ViewBuilder
+    private var studioSection: some View {
+        SidebarSectionHeader(title: "Studio")
+
+        VStack(alignment: .leading, spacing: 2) {
+            SidebarRowView(
+                icon: "list.bullet.clipboard",
+                label: "Render Queue",
+                badge: renderQueueViewModel.activeJobCount,
+                isSelected: selectedDestination == .renderQueue
+            )
+            .accessibilityIdentifier(Constants.Accessibility.sidebarRenderQueueSection)
+            .contentShape(RoundedRectangle(cornerRadius: Radius.sm))
+            .onTapGesture {
+                withAnimation(AnimationTokens.springTransition) {
+                    selectedDestination = .renderQueue
+                }
+            }
+
+            SidebarRowView(
+                icon: "gearshape.2",
+                label: "Worker Status",
+                isSelected: false
+            )
+            .opacity(0.5)
+            .allowsHitTesting(false)
+            .accessibilityLabel("Worker Status — Coming soon")
+        }
+    }
+
+    // MARK: - Library Section (Outputs)
+
+    @ViewBuilder
+    private var librarySection: some View {
+        SidebarSectionHeader(title: "Library")
+
+        VStack(alignment: .leading, spacing: 2) {
+            SidebarRowView(
+                icon: "music.note.list",
+                label: "Outputs",
+                isSelected: selectedDestination == .outputsLibrary
+            )
+            .accessibilityIdentifier(Constants.Accessibility.sidebarOutputsSection)
+            .contentShape(RoundedRectangle(cornerRadius: Radius.sm))
+            .onTapGesture {
+                withAnimation(AnimationTokens.springTransition) {
+                    selectedDestination = .outputsLibrary
+                }
+            }
+        }
     }
 
     // MARK: - Detail
 
     @ViewBuilder
     private var detailView: some View {
-        switch selectedDestination {
-        case .projectEditor(let project):
-            ProjectEditorView(
-                project: project,
-                onSave: { projectsViewModel.saveProject(project) },
-                onRender: {
-                    Task {
-                        await renderQueueViewModel.submitRender(for: project)
+        ZStack {
+            detailBackground
+                .ignoresSafeArea()
+
+            Group {
+                if shouldShowHero {
+                    heroWelcomeView
+                } else {
+                    switch selectedDestination {
+                    case .projectEditor(let project):
+                    ProjectEditorView(
+                        project: project,
+                        onSave: { projectsViewModel.saveProject(project) },
+                        onRender: {
+                            Task {
+                                await renderQueueViewModel.submitRender(for: project)
+                            }
+                        }
+                    )
+                    .padding(Spacing.sm)
+                    .id(project.id)
+
+                    case .renderQueue:
+                        RenderQueueView(viewModel: renderQueueViewModel)
+                            .padding(Spacing.sm)
+
+                    case .outputsLibrary:
+                        OutputsLibraryView(viewModel: outputsLibraryViewModel)
+                            .onAppear {
+                                outputsLibraryViewModel.refreshFromJobs(renderQueueViewModel.jobs)
+                            }
+                            .padding(Spacing.sm)
+
+                    case nil:
+                        heroWelcomeView
                     }
                 }
-            )
-
-        case .renderQueue:
-            RenderQueueView(viewModel: renderQueueViewModel)
-
-        case .outputsLibrary:
-            OutputsLibraryView(viewModel: outputsLibraryViewModel)
-                .onAppear {
-                    outputsLibraryViewModel.refreshFromJobs(renderQueueViewModel.jobs)
-                }
-
-        case nil:
-            emptyStateView
-        }
-    }
-
-    private var emptyStateView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "waveform.circle")
-                .font(.system(size: 64))
-                .foregroundStyle(Color.textSecondary)
-            Text("Select or create a project to get started")
-                .font(.title2)
-                .foregroundStyle(Color.textSecondary)
-            Button("New Project") {
-                projectsViewModel.createProject()
             }
-            .buttonStyle(.borderedProminent)
-            .accessibilityIdentifier(Constants.Accessibility.newProjectButton)
+            .transition(
+                .asymmetric(
+                    insertion: .opacity
+                        .combined(with: .offset(y: 6))
+                        .combined(with: .scale(scale: 0.995, anchor: .center)),
+                    removal: .opacity.combined(with: .offset(y: -4))
+                )
+            )
+            .animation(AnimationTokens.springTransition, value: selectedDestination)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.canvas)
     }
-}
 
-// MARK: - Project Row
-
-struct ProjectRowView: View {
-    let project: Project
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(project.name)
-                .font(.headline)
-                .lineLimit(1)
-            Text(project.modifiedAt.formatted(date: .abbreviated, time: .shortened))
-                .font(.caption)
-                .foregroundStyle(Color.textSecondary)
+    @ViewBuilder
+    private var detailBackground: some View {
+        Group {
+            if shouldShowHero {
+                GradientTokens.heroGradient
+            } else {
+                GradientTokens.backgroundGradient
+            }
         }
-        .padding(.vertical, 2)
+        .transition(.opacity)
+        .animation(AnimationTokens.springTransition, value: selectedDestination)
+    }
+
+    private var recentProjects: [Project] {
+        Array(
+            projectsViewModel.projects
+                .sorted { $0.modifiedAt > $1.modifiedAt }
+                .prefix(3)
+        )
+    }
+
+    private var heroWelcomeView: some View {
+        HeroWelcomeView(
+            recentProjects: recentProjects,
+            onNewSession: {
+                projectsViewModel.createProject()
+            },
+            onSelectProject: { project in
+                selectedDestination = .projectEditor(project)
+                projectsViewModel.selectedProject = project
+            }
+        )
+        .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .center)))
     }
 }

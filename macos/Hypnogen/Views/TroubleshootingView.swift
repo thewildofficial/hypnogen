@@ -8,7 +8,7 @@ import SwiftUI
 struct TroubleshootingView: View {
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: Spacing.md) {
                 header
                 ForEach(TroubleshootingContent.entries) { entry in
                     TroubleshootingCardView(entry: entry)
@@ -17,20 +17,20 @@ struct TroubleshootingView: View {
                         )
                 }
             }
-            .padding(24)
+            .padding(Spacing.lg)
         }
-        .background(Color.canvas)
+        .scrollContentBackground(.hidden)
         .accessibilityIdentifier(Constants.Accessibility.Onboarding.troubleshootingContainer)
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
             Label("Troubleshooting", systemImage: "wrench.and.screwdriver.fill")
-                .font(.title2)
-                .fontWeight(.semibold)
+                .font(Typography.sectionTitle)
+                .foregroundStyle(Color.textPrimary)
 
             Text("Common issues and how to fix them.")
-                .font(.subheadline)
+                .font(Typography.bodySmall)
                 .foregroundStyle(Color.textSecondary)
         }
     }
@@ -45,46 +45,49 @@ struct TroubleshootingCardView: View {
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
                 causeRow
                 solutionRow
             }
-            .padding(.top, 8)
+            .padding(.top, Spacing.sm)
         } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: Spacing.sm) {
                 Image(systemName: entry.sfSymbol)
-                    .font(.title3)
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(Color.orange)
                     .frame(width: 24)
                 Text(entry.problem)
-                    .font(.headline)
+                    .font(Typography.bodySmall)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.textPrimary)
             }
         }
-        .padding(12)
-        .background(Color.surface.opacity(0.3))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .tint(Color.accentViolet)
+        .glassCardStyle(elevation: .raised)
     }
 
     private var causeRow: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: Spacing.sm) {
             Text("Why:")
-                .font(.callout)
+                .font(Typography.captionText)
                 .fontWeight(.medium)
+                .foregroundStyle(Color.textAccent)
                 .frame(width: 44, alignment: .leading)
             Text(entry.cause)
-                .font(.callout)
+                .font(Typography.captionText)
                 .foregroundStyle(Color.textSecondary)
         }
     }
 
     private var solutionRow: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: Spacing.sm) {
             Text("Fix:")
-                .font(.callout)
+                .font(Typography.captionText)
                 .fontWeight(.medium)
+                .foregroundStyle(Color.textAccent)
                 .frame(width: 44, alignment: .leading)
             Text(entry.solution)
-                .font(.callout)
+                .font(Typography.captionText)
                 .foregroundStyle(Color.textSecondary)
                 .lineSpacing(2)
         }

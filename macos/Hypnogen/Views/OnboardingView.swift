@@ -3,45 +3,155 @@
 //
 // Main onboarding container: tab-based layout with Skip / Done controls and persistence toggle.
 
+
 import SwiftUI
 
 struct OnboardingView: View {
     @Bindable var viewModel: OnboardingViewModel
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var appeared = false
+    @Namespace private var tabNamespace
+
     var body: some View {
-        VStack(spacing: 0) {
-            tabPicker
-                .padding(.top, 12)
-                .padding(.horizontal, 24)
+        ZStack {
+            backgroundLayer
 
-            Divider()
-                .padding(.top, 8)
+            VStack(spacing: 0) {
+                styledTabBar
+                    .padding(.top, Spacing.md)
+                    .padding(.horizontal, Spacing.lg)
 
-            tabContent
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                separatorLine
+                    .padding(.top, Spacing.sm)
 
-            Divider()
+                tabContent
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            bottomBar
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
+                separatorLine
+
+                bottomBar
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, Spacing.md)
+            }
+            .frostedGlass(.prominent, cornerRadius: Radius.lg)
+            .padding(Spacing.md)
+            .shadow(ShadowTokens.modal)
+            .opacity(appeared ? 1 : 0)
+            .scaleEffect(appeared ? 1 : 0.96)
+            .animation(
+                MotionSensitiveAnimation.resolve(
+                    .spring(response: 0.5, dampingFraction: 0.8),
+                    reduceMotion: reduceMotion
+                ),
+                value: appeared
+            )
         }
-        .background(Color.canvas)
-        .frame(width: 600, height: 520)
+        .frame(width: 620, height: 540)
         .accessibilityIdentifier(Constants.Accessibility.Onboarding.onboardingView)
+        .onAppear {
+            appeared = true
+        }
     }
 
-    // MARK: - Tab Picker
+    // MARK: - Background Layer
 
-    private var tabPicker: some View {
-        Picker("Section", selection: $viewModel.selectedTab) {
+    private var backgroundLayer: some View {
+        ZStack {
+            GradientTokens.heroGradient
+                .ignoresSafeArea()
+
+            Circle()
+                .fill(
+                    RadialGradient.fade(
+                        Color.accentViolet.opacity(0.15),
+                        radius: 200
+                    )
+                )
+                .frame(width: 400, height: 400)
+                .offset(x: -120, y: -160)
+                .blur(radius: 60)
+
+            Circle()
+                .fill(
+                    RadialGradient.fade(
+                        Color.accentIndigo.opacity(0.1),
+                        radius: 180
+                    )
+                )
+                .frame(width: 360, height: 360)
+                .offset(x: 140, y: 120)
+                .blur(radius: 50)
+        }
+    }
+
+    // MARK: - Styled Tab Bar
+
+    private var styledTabBar: some View {
+        HStack(spacing: Spacing.xs) {
             ForEach(OnboardingTab.allCases) { tab in
-                Label(tab.title, systemImage: tab.sfSymbol)
-                    .tag(tab)
+                tabButton(for: tab)
             }
         }
-        .pickerStyle(.segmented)
-        .labelsHidden()
+        .padding(Spacing.xs)
+        .background(Color.surfacePrimary.opacity(0.3))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.sm + 2, style: .continuous))
+    }
+
+    private func tabButton(for tab: OnboardingTab) -> some View {
+        let isSelected = viewModel.selectedTab == tab
+
+        return Button {
+            withTokenAnimation(AnimationTokens.springCard, reduceMotion: reduceMotion) {
+                viewModel.selectedTab = tab
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: tab.sfSymbol)
+                    .font(Typography.captionText)
+                    .fontWeight(.medium)
+                    .foregroundStyle(isSelected ? Color.textPrimary : Color.textSecondary)
+
+                Text(tab.title)
+                    .font(Typography.bodySmall)
+                    .fontWeight(isSelected ? .semibold : .medium)
+                    .foregroundStyle(isSelected ? Color.textPrimary : Color.textSecondary)
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+            .background {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
+                        .fill(Color.accentViolet.opacity(0.25))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
+                                .strokeBorder(Color.accentViolet.opacity(0.4), lineWidth: 1)
+                        )
+                        .matchedGeometryEffect(id: "activeTab", in: tabNamespace)
+                }
+            }
+            .contentShape(RoundedRectangle(cornerRadius: Radius.sm))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Separator
+
+    private var separatorLine: some View {
+        Rectangle()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color.accentViolet.opacity(0),
+                        Color.accentViolet.opacity(0.3),
+                        Color.accentViolet.opacity(0),
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .frame(height: 1)
+            .padding(.horizontal, Spacing.md)
     }
 
     // MARK: - Tab Content
@@ -67,6 +177,8 @@ struct OnboardingView: View {
                 set: { viewModel.dontShowOnboardingAgain = $0 }
             ))
             .toggleStyle(.checkbox)
+            .font(Typography.captionText)
+            .foregroundStyle(Color.textSecondary)
             .accessibilityIdentifier(Constants.Accessibility.Onboarding.dontShowAgainCheckbox)
 
             Spacer()
@@ -74,13 +186,14 @@ struct OnboardingView: View {
             Button("Skip") {
                 viewModel.skipOnboarding()
             }
+            .buttonStyle(GhostButtonStyle(size: .medium))
             .keyboardShortcut(.cancelAction)
             .accessibilityIdentifier(Constants.Accessibility.Onboarding.skipButton)
 
             Button("Done") {
                 viewModel.finishOnboarding()
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(PrimaryButtonStyle(size: .medium))
             .keyboardShortcut(.defaultAction)
             .accessibilityIdentifier(Constants.Accessibility.Onboarding.doneButton)
         }

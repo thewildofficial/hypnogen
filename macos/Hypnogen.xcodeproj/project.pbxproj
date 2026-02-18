@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A100000028 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B100000028; };
 		A100000001 /* HypnogenApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000001; };
 		A100000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000002; };
 		A100000003 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000003; };
@@ -40,10 +41,35 @@
 		A200000004 /* ProjectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000004; };
 		A200000005 /* RenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000005; };
 		A200000006 /* LibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000006; };
+		A300000001 /* ColorTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000001; };
+		A300000002 /* ButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000002; };
+		A300000003 /* CardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000003; };
+		A300000004 /* PanelStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000004; };
+		A300000005 /* SpacingTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000005; };
+		A300000006 /* RadiusTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000006; };
+		A300000007 /* ShadowTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000007; };
+		A300000008 /* TypographyTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000008; };
+		A300000009 /* AnimationTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000009; };
+		A300000010 /* GradientTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000010; };
+		A300000011 /* GlassEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000011; };
+		A100000029 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000029; };
+		A100000030 /* HeroWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000030; };
+		A100000031 /* SidebarRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000031; };
+		A100000032 /* ProjectRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000032; };
+		A400000001 /* SnapshotTestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000001; };
+		A400000002 /* ViewSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000002; };
+		A400000003 /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = P400000001 /* SnapshotTesting */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		C200000010 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F100000010 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F100000001;
+			remoteInfo = Hypnogen;
+		};
+		C400000010 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F100000010 /* Project object */;
 			proxyType = 1;
@@ -80,6 +106,7 @@
 		B100000025 /* WorkerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerManager.swift; sourceTree = "<group>"; };
 		B100000026 /* WorkerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerViewModel.swift; sourceTree = "<group>"; };
 		B100000027 /* WorkerStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerStatusView.swift; sourceTree = "<group>"; };
+		B100000028 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B200000001 /* HypnogenUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HypnogenUITests.swift; sourceTree = "<group>"; };
 		B200000002 /* ScreenshotHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotHelper.swift; sourceTree = "<group>"; };
 		B200000003 /* OnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingTests.swift; sourceTree = "<group>"; };
@@ -88,6 +115,24 @@
 		B200000006 /* LibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryTests.swift; sourceTree = "<group>"; };
 		C100000001 /* Hypnogen.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hypnogen.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C200000001 /* HypnogenUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HypnogenUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B300000001 /* ColorTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTokens.swift; sourceTree = "<group>"; };
+		B300000002 /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
+		B300000003 /* CardStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStyle.swift; sourceTree = "<group>"; };
+		B300000004 /* PanelStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelStyle.swift; sourceTree = "<group>"; };
+		B300000005 /* SpacingTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacingTokens.swift; sourceTree = "<group>"; };
+		B300000006 /* RadiusTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadiusTokens.swift; sourceTree = "<group>"; };
+		B300000007 /* ShadowTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadowTokens.swift; sourceTree = "<group>"; };
+		B300000008 /* TypographyTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypographyTokens.swift; sourceTree = "<group>"; };
+		B300000009 /* AnimationTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationTokens.swift; sourceTree = "<group>"; };
+		B300000010 /* GradientTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientTokens.swift; sourceTree = "<group>"; };
+		B300000011 /* GlassEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassEffects.swift; sourceTree = "<group>"; };
+		B100000029 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		B100000030 /* HeroWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroWelcomeView.swift; sourceTree = "<group>"; };
+		B100000031 /* SidebarRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarRowView.swift; sourceTree = "<group>"; };
+		B100000032 /* ProjectRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectRowView.swift; sourceTree = "<group>"; };
+		B400000001 /* SnapshotTestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotTestCase.swift; sourceTree = "<group>"; };
+		B400000002 /* ViewSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewSnapshotTests.swift; sourceTree = "<group>"; };
+		C300000001 /* HypnogenSnapshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HypnogenSnapshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -105,6 +150,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D300000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A400000003 /* SnapshotTesting in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -113,6 +166,7 @@
 			children = (
 				E100000002 /* Hypnogen */,
 				E200000001 /* HypnogenUITests */,
+				E300000001 /* HypnogenSnapshotTests */,
 				E100000008 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -122,6 +176,8 @@
 			children = (
 				B100000001 /* HypnogenApp.swift */,
 				B100000002 /* ContentView.swift */,
+				B100000028 /* Assets.xcassets */,
+				E100000009 /* DesignSystem */,
 				E100000003 /* Models */,
 				E100000004 /* Services */,
 				E100000005 /* ViewModels */,
@@ -129,6 +185,24 @@
 				E100000007 /* Resources */,
 			);
 			path = Hypnogen;
+			sourceTree = "<group>";
+		};
+		E100000009 /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				B300000001 /* ColorTokens.swift */,
+				B300000002 /* ButtonStyles.swift */,
+				B300000003 /* CardStyle.swift */,
+				B300000004 /* PanelStyle.swift */,
+				B300000005 /* SpacingTokens.swift */,
+				B300000006 /* RadiusTokens.swift */,
+				B300000007 /* ShadowTokens.swift */,
+				B300000008 /* TypographyTokens.swift */,
+				B300000009 /* AnimationTokens.swift */,
+				B300000010 /* GradientTokens.swift */,
+				B300000011 /* GlassEffects.swift */,
+			);
+			path = DesignSystem;
 			sourceTree = "<group>";
 		};
 		E100000003 /* Models */ = {
@@ -179,6 +253,10 @@
 				B100000020 /* TroubleshootingView.swift */,
 				B100000024 /* CalibrationView.swift */,
 				B100000027 /* WorkerStatusView.swift */,
+				B100000029 /* EmptyStateView.swift */,
+				B100000030 /* HeroWelcomeView.swift */,
+				B100000031 /* SidebarRowView.swift */,
+				B100000032 /* ProjectRowView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -196,6 +274,7 @@
 			children = (
 				C100000001 /* Hypnogen.app */,
 				C200000001 /* HypnogenUITests.xctest */,
+				C300000001 /* HypnogenSnapshotTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -211,6 +290,15 @@
 				B200000006 /* LibraryTests.swift */,
 			);
 			path = HypnogenUITests;
+			sourceTree = "<group>";
+		};
+		E300000001 /* HypnogenSnapshotTests */ = {
+			isa = PBXGroup;
+			children = (
+				B400000001 /* SnapshotTestCase.swift */,
+				B400000002 /* ViewSnapshotTests.swift */,
+			);
+			path = HypnogenSnapshotTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -251,6 +339,27 @@
 			productReference = C200000001 /* HypnogenUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		F100000200 /* HypnogenSnapshotTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F200000200 /* Build configuration list for PBXNativeTarget "HypnogenSnapshotTests" */;
+			buildPhases = (
+				F100000201 /* Sources */,
+				D300000001 /* Frameworks */,
+				F100000202 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C400000011 /* PBXTargetDependency */,
+			);
+			name = HypnogenSnapshotTests;
+			packageProductDependencies = (
+				P400000001 /* SnapshotTesting */,
+			);
+			productName = HypnogenSnapshotTests;
+			productReference = C300000001 /* HypnogenSnapshotTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -268,6 +377,10 @@
 						CreatedOnToolsVersion = 16.0;
 						TestTargetID = F100000001;
 					};
+					F100000200 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = F100000001;
+					};
 				};
 			};
 			buildConfigurationList = F200000001 /* Build configuration list for PBXProject "Hypnogen" */;
@@ -279,12 +392,16 @@
 				Base,
 			);
 			mainGroup = E100000001;
+			packageReferences = (
+				G400000001 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
+			);
 			productRefGroup = E100000008 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				F100000001 /* Hypnogen */,
 				F100000100 /* HypnogenUITests */,
+				F100000200 /* HypnogenSnapshotTests */,
 			);
 		};
 /* End PBXProject section */
@@ -294,10 +411,18 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A100000028 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F100000102 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F100000202 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -338,6 +463,21 @@
 				A100000025 /* WorkerManager.swift in Sources */,
 				A100000026 /* WorkerViewModel.swift in Sources */,
 				A100000027 /* WorkerStatusView.swift in Sources */,
+				A300000001 /* ColorTokens.swift in Sources */,
+				A300000002 /* ButtonStyles.swift in Sources */,
+				A300000003 /* CardStyle.swift in Sources */,
+				A300000004 /* PanelStyle.swift in Sources */,
+				A300000005 /* SpacingTokens.swift in Sources */,
+				A300000006 /* RadiusTokens.swift in Sources */,
+				A300000007 /* ShadowTokens.swift in Sources */,
+				A300000008 /* TypographyTokens.swift in Sources */,
+				A300000009 /* AnimationTokens.swift in Sources */,
+				A300000010 /* GradientTokens.swift in Sources */,
+				A300000011 /* GlassEffects.swift in Sources */,
+				A100000029 /* EmptyStateView.swift in Sources */,
+				A100000030 /* HeroWelcomeView.swift in Sources */,
+				A100000031 /* SidebarRowView.swift in Sources */,
+				A100000032 /* ProjectRowView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -354,6 +494,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F100000201 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A400000001 /* SnapshotTestCase.swift in Sources */,
+				A400000002 /* ViewSnapshotTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -362,6 +511,11 @@
 			target = F100000001 /* Hypnogen */;
 			targetProxy = C200000010 /* PBXContainerItemProxy */;
 		};
+		C400000011 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F100000001 /* Hypnogen */;
+			targetProxy = C400000010 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -369,7 +523,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -431,7 +585,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -569,6 +723,40 @@
 			};
 			name = Release;
 		};
+		F200000210 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.hypnogen.snapshot-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hypnogen.app/Contents/MacOS/Hypnogen";
+			};
+			name = Debug;
+		};
+		F200000211 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.hypnogen.snapshot-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hypnogen.app/Contents/MacOS/Hypnogen";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -599,7 +787,35 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		F200000200 /* Build configuration list for PBXNativeTarget "HypnogenSnapshotTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F200000210 /* Debug */,
+				F200000211 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		G400000001 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.18.9;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		P400000001 /* SnapshotTesting */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = G400000001 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
+			productName = SnapshotTesting;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 	};
 	rootObject = F100000010 /* Project object */;
