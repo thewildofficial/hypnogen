@@ -56,10 +56,20 @@
 		A100000030 /* HeroWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000030; };
 		A100000031 /* SidebarRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000031; };
 		A100000032 /* ProjectRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000032; };
+		A400000001 /* SnapshotTestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000001; };
+		A400000002 /* ViewSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000002; };
+		A400000003 /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = P400000001 /* SnapshotTesting */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		C200000010 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F100000010 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F100000001;
+			remoteInfo = Hypnogen;
+		};
+		C400000010 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F100000010 /* Project object */;
 			proxyType = 1;
@@ -120,6 +130,9 @@
 		B100000030 /* HeroWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroWelcomeView.swift; sourceTree = "<group>"; };
 		B100000031 /* SidebarRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarRowView.swift; sourceTree = "<group>"; };
 		B100000032 /* ProjectRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectRowView.swift; sourceTree = "<group>"; };
+		B400000001 /* SnapshotTestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotTestCase.swift; sourceTree = "<group>"; };
+		B400000002 /* ViewSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewSnapshotTests.swift; sourceTree = "<group>"; };
+		C300000001 /* HypnogenSnapshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HypnogenSnapshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -137,6 +150,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D300000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A400000003 /* SnapshotTesting in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -145,6 +166,7 @@
 			children = (
 				E100000002 /* Hypnogen */,
 				E200000001 /* HypnogenUITests */,
+				E300000001 /* HypnogenSnapshotTests */,
 				E100000008 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -252,6 +274,7 @@
 			children = (
 				C100000001 /* Hypnogen.app */,
 				C200000001 /* HypnogenUITests.xctest */,
+				C300000001 /* HypnogenSnapshotTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -267,6 +290,15 @@
 				B200000006 /* LibraryTests.swift */,
 			);
 			path = HypnogenUITests;
+			sourceTree = "<group>";
+		};
+		E300000001 /* HypnogenSnapshotTests */ = {
+			isa = PBXGroup;
+			children = (
+				B400000001 /* SnapshotTestCase.swift */,
+				B400000002 /* ViewSnapshotTests.swift */,
+			);
+			path = HypnogenSnapshotTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -307,6 +339,27 @@
 			productReference = C200000001 /* HypnogenUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		F100000200 /* HypnogenSnapshotTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F200000200 /* Build configuration list for PBXNativeTarget "HypnogenSnapshotTests" */;
+			buildPhases = (
+				F100000201 /* Sources */,
+				D300000001 /* Frameworks */,
+				F100000202 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C400000011 /* PBXTargetDependency */,
+			);
+			name = HypnogenSnapshotTests;
+			packageProductDependencies = (
+				P400000001 /* SnapshotTesting */,
+			);
+			productName = HypnogenSnapshotTests;
+			productReference = C300000001 /* HypnogenSnapshotTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -324,6 +377,10 @@
 						CreatedOnToolsVersion = 16.0;
 						TestTargetID = F100000001;
 					};
+					F100000200 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = F100000001;
+					};
 				};
 			};
 			buildConfigurationList = F200000001 /* Build configuration list for PBXProject "Hypnogen" */;
@@ -335,12 +392,16 @@
 				Base,
 			);
 			mainGroup = E100000001;
+			packageReferences = (
+				G400000001 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
+			);
 			productRefGroup = E100000008 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				F100000001 /* Hypnogen */,
 				F100000100 /* HypnogenUITests */,
+				F100000200 /* HypnogenSnapshotTests */,
 			);
 		};
 /* End PBXProject section */
@@ -355,6 +416,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F100000102 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F100000202 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -426,6 +494,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F100000201 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A400000001 /* SnapshotTestCase.swift in Sources */,
+				A400000002 /* ViewSnapshotTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -433,6 +510,11 @@
 			isa = PBXTargetDependency;
 			target = F100000001 /* Hypnogen */;
 			targetProxy = C200000010 /* PBXContainerItemProxy */;
+		};
+		C400000011 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F100000001 /* Hypnogen */;
+			targetProxy = C400000010 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -641,6 +723,40 @@
 			};
 			name = Release;
 		};
+		F200000210 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.hypnogen.snapshot-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hypnogen.app/Contents/MacOS/Hypnogen";
+			};
+			name = Debug;
+		};
+		F200000211 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.hypnogen.snapshot-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hypnogen.app/Contents/MacOS/Hypnogen";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -671,7 +787,35 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		F200000200 /* Build configuration list for PBXNativeTarget "HypnogenSnapshotTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F200000210 /* Debug */,
+				F200000211 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		G400000001 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.18.9;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		P400000001 /* SnapshotTesting */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = G400000001 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
+			productName = SnapshotTesting;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 	};
 	rootObject = F100000010 /* Project object */;
