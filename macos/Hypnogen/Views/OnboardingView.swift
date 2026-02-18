@@ -108,11 +108,13 @@ struct OnboardingView: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: tab.sfSymbol)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(Typography.captionText)
+                    .fontWeight(.medium)
                     .foregroundStyle(isSelected ? Color.textPrimary : Color.textSecondary)
 
                 Text(tab.title)
-                    .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
+                    .font(Typography.bodySmall)
+                    .fontWeight(isSelected ? .semibold : .medium)
                     .foregroundStyle(isSelected ? Color.textPrimary : Color.textSecondary)
             }
             .padding(.horizontal, Spacing.md)
@@ -175,7 +177,7 @@ struct OnboardingView: View {
                 set: { viewModel.dontShowOnboardingAgain = $0 }
             ))
             .toggleStyle(.checkbox)
-            .font(.system(size: 12))
+            .font(Typography.captionText)
             .foregroundStyle(Color.textSecondary)
             .accessibilityIdentifier(Constants.Accessibility.Onboarding.dontShowAgainCheckbox)
 

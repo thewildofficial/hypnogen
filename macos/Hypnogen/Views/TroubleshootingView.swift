@@ -26,11 +26,11 @@ struct TroubleshootingView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             Label("Troubleshooting", systemImage: "wrench.and.screwdriver.fill")
-                .font(.system(size: 18, weight: .semibold))
+                .font(Typography.sectionTitle)
                 .foregroundStyle(Color.textPrimary)
 
             Text("Common issues and how to fix them.")
-                .font(.system(size: 13))
+                .font(Typography.bodySmall)
                 .foregroundStyle(Color.textSecondary)
         }
     }
@@ -57,7 +57,8 @@ struct TroubleshootingCardView: View {
                     .foregroundStyle(Color.orange)
                     .frame(width: 24)
                 Text(entry.problem)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(Typography.bodySmall)
+                    .fontWeight(.semibold)
                     .foregroundStyle(Color.textPrimary)
             }
         }
@@ -68,11 +69,12 @@ struct TroubleshootingCardView: View {
     private var causeRow: some View {
         HStack(alignment: .top, spacing: Spacing.sm) {
             Text("Why:")
-                .font(.system(size: 12, weight: .medium))
+                .font(Typography.captionText)
+                .fontWeight(.medium)
                 .foregroundStyle(Color.textAccent)
                 .frame(width: 44, alignment: .leading)
             Text(entry.cause)
-                .font(.system(size: 12))
+                .font(Typography.captionText)
                 .foregroundStyle(Color.textSecondary)
         }
     }
@@ -80,11 +82,12 @@ struct TroubleshootingCardView: View {
     private var solutionRow: some View {
         HStack(alignment: .top, spacing: Spacing.sm) {
             Text("Fix:")
-                .font(.system(size: 12, weight: .medium))
+                .font(Typography.captionText)
+                .fontWeight(.medium)
                 .foregroundStyle(Color.textAccent)
                 .frame(width: 44, alignment: .leading)
             Text(entry.solution)
-                .font(.system(size: 12))
+                .font(Typography.captionText)
                 .foregroundStyle(Color.textSecondary)
                 .lineSpacing(2)
         }

@@ -75,30 +75,25 @@ struct FeatureTourView: View {
 
                 Image(systemName: page.sfSymbol)
                     .font(.system(size: 40, weight: .light))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color.accentGlow, Color.accentViolet],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .foregroundStyle(LinearGradient.glowGradient)
                     .symbolRenderingMode(.hierarchical)
             }
 
             VStack(spacing: Spacing.sm) {
                 Text(page.title)
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .font(Typography.pageTitle)
+                    .tracking(Typography.trackingTight)
                     .foregroundStyle(Color.textPrimary)
                     .multilineTextAlignment(.center)
 
                 Text(page.subtitle)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(Typography.bodyBold)
                     .foregroundStyle(Color.textAccent)
                     .multilineTextAlignment(.center)
             }
 
             Text(page.body)
-                .font(.system(size: 13))
+                .font(Typography.bodySmall)
                 .foregroundStyle(Color.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
@@ -113,31 +108,25 @@ struct FeatureTourView: View {
         VStack(spacing: Spacing.md) {
             Image(systemName: page.sfSymbol)
                 .font(.system(size: 44, weight: .light))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color.accentGlow, Color.accentViolet],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+                .foregroundStyle(LinearGradient.glowGradient)
                 .symbolRenderingMode(.hierarchical)
                 .shadow(color: Color.accentGlow.opacity(0.3), radius: 12, x: 0, y: 0)
                 .accessibilityHidden(true)
 
             VStack(spacing: Spacing.xs) {
                 Text(page.title)
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(Typography.sectionTitle)
                     .foregroundStyle(Color.textPrimary)
                     .multilineTextAlignment(.center)
 
                 Text(page.subtitle)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(Typography.bodyBold)
                     .foregroundStyle(Color.textAccent)
                     .multilineTextAlignment(.center)
             }
 
             Text(page.body)
-                .font(.system(size: 13))
+                .font(Typography.bodySmall)
                 .foregroundStyle(Color.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
