@@ -31,9 +31,11 @@ struct ProjectEditorView: View {
     let onSave: () -> Void
     let onRender: () -> Void
 
-    @State private var newAffirmation = ""
     @State private var selectedTab: EditorTab = .script
     @State private var cardAppeared = false
+
+    // Affirmation focus tracking for Enter-to-add flow
+    @FocusState private var focusedAffirmationIndex: Int?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -50,9 +52,16 @@ struct ProjectEditorView: View {
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button(action: onRender) {
-                    Label("Render", systemImage: "waveform")
+                    HStack(spacing: 6) {
+                        Image(systemName: "waveform")
+                            .font(.system(size: 11, weight: .semibold))
+                            .frame(width: 14, height: 14)
+                        Text("Render")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .frame(minWidth: 80, minHeight: 28)
                 }
-                .buttonStyle(PrimaryButtonStyle())
+                .buttonStyle(PrimaryButtonStyle(size: .small))
                 .accessibilityIdentifier(Constants.Accessibility.renderButton)
                 .disabled(
                     project.scriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -101,7 +110,7 @@ struct ProjectEditorView: View {
                 )
                 .frame(width: 180, height: 2)
         }
-        .padding(.top, Spacing.lg)
+        .padding(.top, Spacing.xl)
         .padding(.bottom, Spacing.md)
     }
 
@@ -200,38 +209,52 @@ struct ProjectEditorView: View {
     // MARK: - Script Tab
 
     private var scriptTab: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("Script")
-                .font(Typography.sectionTitle)
-                .foregroundColor(.textSecondary)
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Script")
+                    .font(Typography.sectionTitle)
+                    .foregroundColor(.textSecondary)
+
+                Spacer()
+
+                let wordCount = project.scriptText
+                    .split(whereSeparator: { $0.isWhitespace || $0.isNewline })
+                    .count
+                Text("\(wordCount) words")
+                    .font(Typography.captionText)
+                    .foregroundColor(.textSecondary.opacity(0.6))
+                    .monospacedDigit()
+            }
+            .padding(.horizontal, Spacing.xs)
 
             TextEditor(text: $project.scriptText)
                 .font(Typography.monospaceText)
                 .foregroundColor(.textPrimary)
                 .scrollContentBackground(.hidden)
-                .padding(Spacing.sm)
+                .padding(.leading, Spacing.md + 4)
+                .padding(.trailing, Spacing.md)
+                .padding(.vertical, Spacing.md)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
-                        .fill(Color.accentViolet.opacity(0.04))
+                        .fill(Color.backgroundDeep.opacity(0.4))
                 )
-                .overlay(
-                    HStack(spacing: 0) {
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color.accentIndigo.opacity(0.7), Color.accentViolet.opacity(0.4)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
+                .overlay(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.accentIndigo.opacity(0.7), Color.accentViolet.opacity(0.3)],
+                                startPoint: .top,
+                                endPoint: .bottom
                             )
-                            .frame(width: 3)
-                            .padding(.vertical, 6)
-                        Spacer()
-                    }
-                )
+                        )
+                        .frame(width: 3)
+                        .padding(.vertical, Spacing.sm)
+                        .padding(.leading, Spacing.sm)
+                }
                 .overlay(
                     RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
-                        .strokeBorder(Color.surfaceSecondary.opacity(0.25), lineWidth: 0.5)
+                        .strokeBorder(Color.surfaceSecondary.opacity(0.2), lineWidth: 0.5)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
                 .accessibilityIdentifier(Constants.Accessibility.scriptEditor)
@@ -242,8 +265,8 @@ struct ProjectEditorView: View {
     // MARK: - Affirmations Tab
 
     private var affirmationsTab: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .firstTextBaseline) {
                 Text("Affirmations")
                     .font(Typography.sectionTitle)
                     .foregroundColor(.textSecondary)
@@ -259,59 +282,65 @@ struct ProjectEditorView: View {
                             .fill(Color.accentViolet.opacity(0.15))
                     )
             }
+            .padding(.horizontal, Spacing.xs)
+            .padding(.bottom, Spacing.md)
 
-            List {
-                ForEach(project.affirmations.indices, id: \.self) { index in
-                    AffirmationRow(
-                        text: Binding(
-                            get: { project.affirmations[index] },
-                            set: { project.affirmations[index] = $0 }
-                        ),
-                        index: index,
-                        onRemove: { removeAffirmation(at: index) }
-                    )
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
+            ScrollView {
+                LazyVStack(spacing: 2) {
+                    ForEach(Array(project.affirmations.enumerated()), id: \.offset) { index, _ in
+                        AffirmationRow(
+                            text: Binding(
+                                get: { project.affirmations[index] },
+                                set: { project.affirmations[index] = $0 }
+                            ),
+                            index: index,
+                            isFocused: focusedAffirmationIndex == index,
+                            onRemove: { removeAffirmation(at: index) },
+                            onSubmit: { handleAffirmationSubmit(at: index) }
+                        )
+                        .focused($focusedAffirmationIndex, equals: index)
+                        .transition(
+                            .asymmetric(
+                                insertion: .move(edge: .top)
+                                    .combined(with: .opacity)
+                                    .combined(with: .scale(scale: 0.95, anchor: .top)),
+                                removal: .opacity.combined(with: .scale(scale: 0.95))
+                            )
+                        )
+                        .id("affirmation-\(index)")
+                    }
+
+                    Button {
+                        addEmptyAffirmation()
+                    } label: {
+                        HStack(spacing: Spacing.sm) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.accentViolet.opacity(0.7))
+                                .frame(width: 20, height: 20)
+                                .background(
+                                    Circle()
+                                        .fill(Color.accentViolet.opacity(0.1))
+                                )
+
+                            Text("Add affirmation")
+                                .font(Typography.bodySmall)
+                                .foregroundColor(.textSecondary.opacity(0.6))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, Spacing.md)
+                        .padding(.vertical, Spacing.sm)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier(Constants.Accessibility.addAffirmationButton)
+                    .padding(.top, Spacing.sm)
                 }
+                .padding(.vertical, Spacing.xs)
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
             .accessibilityIdentifier(Constants.Accessibility.affirmationsList)
-
-            addAffirmationBar
         }
         .padding(Spacing.lg)
-    }
-
-    private var addAffirmationBar: some View {
-        HStack(spacing: Spacing.sm) {
-            TextField("Add affirmation...", text: $newAffirmation)
-                .textFieldStyle(.plain)
-                .font(Typography.bodyText)
-                .foregroundColor(.textPrimary)
-                .padding(.horizontal, Spacing.sm)
-                .padding(.vertical, 6)
-                .background(
-                    RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
-                        .fill(Color.surfacePrimary.opacity(0.5))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
-                        .strokeBorder(Color.surfaceSecondary.opacity(0.3), lineWidth: 0.5)
-                )
-                .onSubmit { addAffirmation() }
-
-            Button {
-                addAffirmation()
-            } label: {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(.accentViolet)
-            }
-            .buttonStyle(.borderless)
-            .disabled(newAffirmation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .accessibilityIdentifier(Constants.Accessibility.addAffirmationButton)
-        }
     }
 
     // MARK: - Settings Tab
@@ -321,6 +350,7 @@ struct ProjectEditorView: View {
             Text("Render Settings")
                 .font(Typography.sectionTitle)
                 .foregroundColor(.textSecondary)
+                .padding(.horizontal, Spacing.xs)
 
             VStack(spacing: Spacing.md) {
                 settingsField(label: "Voice", icon: "mic.fill") {
@@ -417,25 +447,62 @@ struct ProjectEditorView: View {
 
     // MARK: - Actions
 
-    private func addAffirmation() {
-        let trimmed = newAffirmation.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+    private func addEmptyAffirmation() {
+        let newIndex = project.affirmations.count
         withAnimation(
-            MotionSensitiveAnimation.resolve(AnimationTokens.springCard, reduceMotion: reduceMotion)
+            MotionSensitiveAnimation.resolve(
+                .spring(response: 0.35, dampingFraction: 0.8),
+                reduceMotion: reduceMotion
+            )
         ) {
-            project.affirmations.append(trimmed)
+            project.affirmations.append("")
         }
-        newAffirmation = ""
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            focusedAffirmationIndex = newIndex
+        }
+    }
+
+    private func handleAffirmationSubmit(at index: Int) {
+        let trimmed = project.affirmations[index].trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            let newIndex = index + 1
+            withAnimation(
+                MotionSensitiveAnimation.resolve(
+                    .spring(response: 0.35, dampingFraction: 0.8),
+                    reduceMotion: reduceMotion
+                )
+            ) {
+                if newIndex >= project.affirmations.count {
+                    project.affirmations.append("")
+                } else {
+                    project.affirmations.insert("", at: newIndex)
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                focusedAffirmationIndex = newIndex
+            }
+        } else if index + 1 < project.affirmations.count {
+            focusedAffirmationIndex = index + 1
+        }
     }
 
     private func removeAffirmation(at index: Int) {
         guard project.affirmations.indices.contains(index) else { return }
         withAnimation(
-            MotionSensitiveAnimation.resolve(AnimationTokens.springCard, reduceMotion: reduceMotion)
+            MotionSensitiveAnimation.resolve(
+                .spring(response: 0.3, dampingFraction: 0.8),
+                reduceMotion: reduceMotion
+            )
         ) {
             project.affirmations.remove(at: index)
             if project.affirmations.isEmpty {
                 project.affirmations = [""]
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            let focusIndex = max(0, index - 1)
+            if project.affirmations.indices.contains(focusIndex) {
+                focusedAffirmationIndex = focusIndex
             }
         }
     }
@@ -450,45 +517,65 @@ struct ProjectEditorView: View {
 private struct AffirmationRow: View {
     @Binding var text: String
     let index: Int
+    let isFocused: Bool
     let onRemove: () -> Void
+    let onSubmit: () -> Void
 
     @State private var isHovered = false
 
     var body: some View {
-        HStack(spacing: Spacing.sm) {
+        HStack(spacing: 0) {
             Text("\(index + 1)")
                 .font(Typography.label)
                 .monospacedDigit()
-                .foregroundColor(.textSecondary)
-                .frame(width: 20)
+                .foregroundColor(isFocused ? Color.accentViolet : Color.textSecondary.opacity(0.4))
+                .frame(width: 28, alignment: .trailing)
+                .padding(.trailing, Spacing.sm)
+                .animation(AnimationTokens.easeInOut, value: isFocused)
 
-            TextField(
-                "Affirmation \(index + 1)",
-                text: $text
-            )
-            .textFieldStyle(.plain)
-            .font(Typography.bodyText)
-            .foregroundColor(.textPrimary)
-            .accessibilityIdentifier("\(Constants.Accessibility.affirmationField)_\(index)")
+            VStack(spacing: 0) {
+                TextField("Type an affirmation…", text: $text)
+                    .textFieldStyle(.plain)
+                    .font(Typography.bodyText)
+                    .foregroundColor(.textPrimary)
+                    .accessibilityIdentifier("\(Constants.Accessibility.affirmationField)_\(index)")
+                    .onSubmit { onSubmit() }
+                    .padding(.vertical, 8)
 
-            Spacer()
+                Rectangle()
+                    .fill(
+                        isFocused
+                            ? Color.accentViolet.opacity(0.6)
+                            : (isHovered ? Color.surfaceSecondary.opacity(0.5) : Color.surfaceSecondary.opacity(0.2))
+                    )
+                    .frame(height: isFocused ? 1.5 : 0.5)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isFocused)
+            }
 
             Button {
                 onRemove()
             } label: {
-                Image(systemName: "minus.circle.fill")
-                    .font(.system(size: 16))
-                    .foregroundColor(isHovered ? Color.accentViolet : Color.textSecondary.opacity(0.5))
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.textSecondary.opacity(0.5))
+                    .frame(width: 20, height: 20)
+                    .background(
+                        Circle()
+                            .fill(Color.surfaceSecondary.opacity(isHovered ? 0.3 : 0))
+                    )
             }
             .buttonStyle(.borderless)
             .accessibilityIdentifier("\(Constants.Accessibility.removeAffirmationButton)_\(index)")
-            .opacity(isHovered ? 1 : 0.6)
+            .opacity(isHovered || isFocused ? 1 : 0)
+            .animation(AnimationTokens.easeInOut, value: isHovered)
+            .animation(AnimationTokens.easeInOut, value: isFocused)
+            .padding(.leading, Spacing.sm)
         }
-        .padding(.horizontal, Spacing.sm)
-        .padding(.vertical, 6)
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, 2)
         .background(
             RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
-                .fill(isHovered ? Color.accentViolet.opacity(0.06) : Color.clear)
+                .fill(isHovered && !isFocused ? Color.accentViolet.opacity(0.03) : Color.clear)
         )
         .animation(AnimationTokens.easeInOut, value: isHovered)
         .onHover { hovering in

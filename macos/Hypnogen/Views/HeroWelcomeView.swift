@@ -114,37 +114,33 @@ struct HeroWelcomeView: View {
     // MARK: - Content
 
     private var heroContent: some View {
-        VStack(spacing: 0) {
-            Spacer()
-
-            hypnoticWaveform
-                .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 20)
-
-            Spacer()
-                .frame(height: Spacing.xl)
-
-            brandingSection
-                .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 12)
-
-            Spacer()
-                .frame(height: Spacing.xl + Spacing.sm)
-
-            ctaSection
-                .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 8)
-
-            if !recentProjects.isEmpty {
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
                 Spacer()
-                    .frame(height: Spacing.xl)
 
-                recentProjectsSection
-                    .opacity(appeared ? 1 : 0)
-                    .offset(y: appeared ? 0 : 8)
+                VStack(spacing: Spacing.lg) {
+                    hypnoticWaveform
+                        .opacity(appeared ? 1 : 0)
+                        .offset(y: appeared ? 0 : 20)
+
+                    brandingSection
+                        .opacity(appeared ? 1 : 0)
+                        .offset(y: appeared ? 0 : 12)
+
+                    ctaSection
+                        .opacity(appeared ? 1 : 0)
+                        .offset(y: appeared ? 0 : 8)
+
+                    if !recentProjects.isEmpty {
+                        recentProjectsSection
+                            .opacity(appeared ? 1 : 0)
+                            .offset(y: appeared ? 0 : 8)
+                    }
+                }
+
+                Spacer()
             }
-
-            Spacer()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .animation(
             reduceMotion ? nil : .easeOut(duration: 0.8),

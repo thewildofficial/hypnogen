@@ -5,50 +5,50 @@ import SwiftUI
 // lookups from Asset Catalogs fail silently at runtime (returning clear),
 // even when the .car file contains correct color data.
 //
-// Palette: "Bioluminescent Deep" — deep teal/cyan inspired by
-// ocean bioluminescence. Premium, calming, distinctive.
+// Palette: "iPhone Rose Gold" — deep dusty rose with vibrant metallic pink accents
+// Pinker, more saturated rose gold for a distinctly feminine, premium feel.
 
 extension Color {
     // MARK: Backgrounds
 
-    /// Near-black teal background (#060E12)
-    static let backgroundDeep = Color(red: 0.024, green: 0.055, blue: 0.071)
+    /// Deep dusty rose background with strong pink undertones (#1F1015)
+    static let backgroundDeep = Color(red: 0.122, green: 0.063, blue: 0.082)
 
-    /// Dark teal mid-layer background (#0A1A22)
-    static let backgroundMid = Color(red: 0.039, green: 0.102, blue: 0.133)
+    /// Rich dusty rose mid-layer background (#2D1A22)
+    static let backgroundMid = Color(red: 0.176, green: 0.102, blue: 0.133)
 
-    /// Mid teal elevated background (#112A32)
-    static let backgroundLight = Color(red: 0.067, green: 0.165, blue: 0.196)
+    /// Warm dusty rose elevated background (#422633)
+    static let backgroundLight = Color(red: 0.259, green: 0.149, blue: 0.200)
 
     // MARK: Surfaces
 
-    /// Elevated surface for cards and panels (#143038)
-    static let surfacePrimary = Color(red: 0.078, green: 0.188, blue: 0.220)
+    /// Rose-tinted surface for cards and panels (#523040)
+    static let surfacePrimary = Color(red: 0.322, green: 0.188, blue: 0.251)
 
-    /// Secondary surface for nested elements (#1A3D45)
-    static let surfaceSecondary = Color(red: 0.102, green: 0.239, blue: 0.271)
+    /// Secondary surface for nested elements (#633A4D)
+    static let surfaceSecondary = Color(red: 0.388, green: 0.227, blue: 0.302)
 
     // MARK: Accents
 
-    /// Bright teal primary accent (#2DD4BF)
-    static let accentViolet = Color(red: 0.176, green: 0.831, blue: 0.749)
+    /// Vibrant rose gold metallic primary accent — PINKER (#F2A4B8)
+    static let accentViolet = Color(red: 0.949, green: 0.643, blue: 0.722)
 
-    /// Cyan accent for secondary highlights (#22D3EE)
-    static let accentIndigo = Color(red: 0.133, green: 0.827, blue: 0.933)
+    /// Bright pink accent for secondary highlights (#F9C2D4)
+    static let accentIndigo = Color(red: 0.976, green: 0.761, blue: 0.831)
 
-    /// Soft teal glow for hover/active states (#5EEAD4)
-    static let accentGlow = Color(red: 0.369, green: 0.918, blue: 0.831)
+    /// Hot champagne pink glow for hover/active states (#FFD9E8)
+    static let accentGlow = Color(red: 1.000, green: 0.851, blue: 0.910)
 
     // MARK: Text
 
-    /// Cool white primary text with teal tint (#F0FDFA)
-    static let textPrimary = Color(red: 0.941, green: 0.992, blue: 0.980)
+    /// Blush white primary text (#FFF5F8)
+    static let textPrimary = Color(red: 1.000, green: 0.961, blue: 0.973)
 
-    /// Cool slate secondary text (#94A3B8)
-    static let textSecondary = Color(red: 0.580, green: 0.639, blue: 0.722)
+    /// Dusty rose secondary text (#E8B8C8)
+    static let textSecondary = Color(red: 0.910, green: 0.722, blue: 0.784)
 
-    /// Light teal accent text (#99F6E4)
-    static let textAccent = Color(red: 0.600, green: 0.965, blue: 0.894)
+    /// Hot pink accent text (#FFB8D4)
+    static let textAccent = Color(red: 1.000, green: 0.722, blue: 0.831)
 
     // MARK: Backward-Compatible Aliases
 
@@ -71,16 +71,16 @@ extension Color {
 // MARK: - Gradient Presets
 
 extension LinearGradient {
-    /// Deep canvas gradient from background deep to darker
+    /// Deep canvas gradient from background deep to darker warm black
     static var canvasGradient: LinearGradient {
         LinearGradient(
-            colors: [Color.backgroundDeep, Color(red: 0.012, green: 0.031, blue: 0.043)],
+            colors: [Color.backgroundDeep, Color(red: 0.063, green: 0.035, blue: 0.035)],
             startPoint: .top,
             endPoint: .bottom
         )
     }
 
-    /// Teal-cyan accent gradient
+    /// Rose gold metallic accent gradient
     static var accentGradient: LinearGradient {
         LinearGradient(
             colors: [Color.accentViolet, Color.accentIndigo],
@@ -89,7 +89,7 @@ extension LinearGradient {
         )
     }
 
-    /// Soft glow gradient for highlights
+    /// Soft champagne glow gradient for highlights
     static var glowGradient: LinearGradient {
         LinearGradient(
             colors: [Color.accentGlow, Color.accentViolet],
