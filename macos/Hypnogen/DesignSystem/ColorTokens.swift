@@ -8,22 +8,22 @@ import SwiftUI
 extension Color {
     // MARK: Backgrounds
 
-    /// Near-black purple background (#0D0D1A)
-    static let backgroundDeep = Color(red: 0.051, green: 0.051, blue: 0.102)
+    /// Near-black violet background (#0C0816)
+    static let backgroundDeep = Color(red: 0.047, green: 0.031, blue: 0.086)
 
-    /// Deep violet mid-layer background (#1A1A2E)
-    static let backgroundMid = Color(red: 0.102, green: 0.102, blue: 0.180)
+    /// Deep violet mid-layer background (#150E28)
+    static let backgroundMid = Color(red: 0.082, green: 0.055, blue: 0.157)
 
-    /// Mid violet elevated background (#2D2D4A)
-    static let backgroundLight = Color(red: 0.176, green: 0.176, blue: 0.290)
+    /// Mid violet elevated background (#1E1535)
+    static let backgroundLight = Color(red: 0.118, green: 0.082, blue: 0.208)
 
     // MARK: Surfaces
 
-    /// Elevated surface for cards and panels (#2A2A4A)
-    static let surfacePrimary = Color(red: 0.165, green: 0.165, blue: 0.290)
+    /// Elevated surface for cards and panels (#241A3D)
+    static let surfacePrimary = Color(red: 0.141, green: 0.102, blue: 0.239)
 
-    /// Secondary surface for nested elements (#3D3D5C)
-    static let surfaceSecondary = Color(red: 0.239, green: 0.239, blue: 0.361)
+    /// Secondary surface for nested elements (#2E2250)
+    static let surfaceSecondary = Color(red: 0.180, green: 0.133, blue: 0.314)
 
     // MARK: Accents
 
@@ -41,8 +41,8 @@ extension Color {
     /// Warm white primary text (#F5F5FF)
     static let textPrimary = Color(red: 0.961, green: 0.961, blue: 1.0)
 
-    /// Muted violet-gray secondary text (#A5A5C0)
-    static let textSecondary = Color(red: 0.647, green: 0.647, blue: 0.753)
+    /// Muted violet secondary text (#ADA0C4)
+    static let textSecondary = Color(red: 0.678, green: 0.627, blue: 0.769)
 
     /// Light violet accent text (#C4B5FD)
     static let textAccent = Color(red: 0.769, green: 0.706, blue: 0.988)
@@ -71,7 +71,7 @@ extension LinearGradient {
     /// Deep canvas gradient from background deep to darker
     static var canvasGradient: LinearGradient {
         LinearGradient(
-            colors: [Color.backgroundDeep, Color.black.opacity(0.3)],
+            colors: [Color.backgroundDeep, Color(red: 0.027, green: 0.016, blue: 0.055)],
             startPoint: .top,
             endPoint: .bottom
         )

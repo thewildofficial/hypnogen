@@ -10,6 +10,12 @@ enum AnimationTokens {
     /// Spring animation for button press
     static let springButton: Animation = .spring(response: 0.2, dampingFraction: 0.8)
 
+    /// Spring animation for smooth view transitions
+    static let springTransition: Animation = .spring(response: 0.35, dampingFraction: 0.85)
+
+    /// Spring animation for hover glow effects
+    static let springGlow: Animation = .spring(response: 0.4, dampingFraction: 0.75)
+
     /// Standard ease-in-out transition
     static let easeInOut: Animation = .easeInOut(duration: 0.25)
 

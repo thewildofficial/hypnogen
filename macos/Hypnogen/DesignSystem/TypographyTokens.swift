@@ -3,20 +3,28 @@ import SwiftUI
 // MARK: - Typography Tokens
 
 /// Typography system using SF Pro (system font) per macOS HIG.
-/// All styles use `Font.system()` to respect user accessibility settings.
+///
+/// Design principles:
+/// - Weight contrast creates visual hierarchy (light display ↔ medium body)
+/// - Tracking scales inversely with size for optical balance
+/// - Line heights tuned per role: tight for display, relaxed for reading
+/// - All styles use `Font.system()` to respect user accessibility settings
 enum Typography {
     // MARK: Display
 
-    /// Large display text for hero sections (48pt, bold)
-    static let heroTitle: Font = .system(size: 48, weight: .bold, design: .default)
+    /// Large display text for hero sections — light weight creates elegance at scale (44pt)
+    static let heroTitle: Font = .system(size: 44, weight: .light, design: .default)
 
-    /// Page-level headers (28pt, semibold)
-    static let pageTitle: Font = .system(size: 28, weight: .semibold, design: .default)
+    /// Page-level headers — medium weight balances authority with refinement (26pt)
+    static let pageTitle: Font = .system(size: 26, weight: .medium, design: .default)
 
-    /// Section headers within a page (20pt, semibold)
-    static let sectionTitle: Font = .system(size: 20, weight: .semibold, design: .default)
+    /// Section headers within a page — semibold for clear structure (18pt)
+    static let sectionTitle: Font = .system(size: 18, weight: .semibold, design: .default)
 
     // MARK: Body
+
+    /// Subtitle / lead text bridging headings and body — medium weight distinction (15pt)
+    static let subtitle: Font = .system(size: 15, weight: .medium, design: .default)
 
     /// Standard body copy (14pt, regular)
     static let bodyText: Font = .system(size: 14, weight: .regular, design: .default)
@@ -29,10 +37,10 @@ enum Typography {
 
     // MARK: Caption & Labels
 
-    /// Caption text for metadata and labels (12pt, regular)
+    /// Caption text for metadata and descriptions (12pt, regular)
     static let captionText: Font = .system(size: 12, weight: .regular, design: .default)
 
-    /// Small label text (11pt, medium)
+    /// Small uppercase-style labels — medium weight for crispness at small sizes (11pt)
     static let label: Font = .system(size: 11, weight: .medium, design: .default)
 
     // MARK: Monospace
@@ -47,75 +55,125 @@ enum Typography {
 // MARK: - Line Height Multipliers
 
 extension Typography {
-    /// Tight line height for display text (1.1×)
-    static let lineHeightTight: CGFloat = 1.1
+    /// Tight line height for display headings — keeps large text compact (1.15×)
+    static let lineHeightTight: CGFloat = 1.15
 
-    /// Standard line height for body text (1.5×)
-    static let lineHeightNormal: CGFloat = 1.5
+    /// Default line height for UI text and short labels (1.4×)
+    static let lineHeightNormal: CGFloat = 1.4
 
-    /// Relaxed line height for readable blocks (1.7×)
-    static let lineHeightRelaxed: CGFloat = 1.7
+    /// Comfortable line height for body paragraphs (1.55×)
+    static let lineHeightRelaxed: CGFloat = 1.55
+
+    /// Generous line height for extended reading blocks (1.7×)
+    static let lineHeightLoose: CGFloat = 1.7
 }
 
 // MARK: - Tracking (Letter Spacing)
 
 extension Typography {
-    /// Tight tracking for large display text (-0.5pt)
-    static let trackingTight: CGFloat = -0.5
+    /// Tight tracking for large display text — optically corrects wide spacing at scale (-1.0pt)
+    static let trackingTight: CGFloat = -1.0
+
+    /// Slightly tight tracking for page titles (-0.4pt)
+    static let trackingSnug: CGFloat = -0.4
 
     /// Normal tracking for body text (0pt)
     static let trackingNormal: CGFloat = 0
 
-    /// Wide tracking for labels and captions (0.3pt)
-    static let trackingWide: CGFloat = 0.3
+    /// Wide tracking for small labels and captions — aids legibility at tiny sizes (0.4pt)
+    static let trackingWide: CGFloat = 0.4
+
+    /// Extra-wide tracking for uppercase labels and overlines (1.2pt)
+    static let trackingExtraWide: CGFloat = 1.2
 }
 
 // MARK: - View Extensions
 
 extension View {
-    /// Apply hero title styling (48pt bold, tight tracking, tight line height)
+    /// Apply hero title styling — light weight, tight tracking, compact line height
     func heroTitle() -> some View {
         self
             .font(Typography.heroTitle)
             .tracking(Typography.trackingTight)
-            .lineSpacing((48 * Typography.lineHeightTight) - 48)
+            .lineSpacing(44 * (Typography.lineHeightTight - 1))
     }
 
-    /// Apply page title styling (28pt semibold, tight tracking)
+    /// Apply page title styling — medium weight, snug tracking
     func pageTitle() -> some View {
         self
             .font(Typography.pageTitle)
-            .tracking(Typography.trackingTight)
-            .lineSpacing((28 * Typography.lineHeightTight) - 28)
+            .tracking(Typography.trackingSnug)
+            .lineSpacing(26 * (Typography.lineHeightTight - 1))
     }
 
-    /// Apply section title styling (20pt semibold)
+    /// Apply section title styling — semibold, normal tracking
     func sectionTitle() -> some View {
         self
             .font(Typography.sectionTitle)
             .tracking(Typography.trackingNormal)
+            .lineSpacing(18 * (Typography.lineHeightNormal - 1))
     }
 
-    /// Apply body text styling (14pt regular, normal line height)
+    /// Apply subtitle styling — medium weight bridge between headings and body
+    func subtitle() -> some View {
+        self
+            .font(Typography.subtitle)
+            .tracking(Typography.trackingNormal)
+            .lineSpacing(15 * (Typography.lineHeightNormal - 1))
+    }
+
+    /// Apply body text styling — regular weight, relaxed line height for readability
     func bodyText() -> some View {
         self
             .font(Typography.bodyText)
             .tracking(Typography.trackingNormal)
-            .lineSpacing((14 * Typography.lineHeightNormal) - 14)
+            .lineSpacing(14 * (Typography.lineHeightRelaxed - 1))
     }
 
-    /// Apply caption text styling (12pt regular, wide tracking)
+    /// Apply bold body styling — semibold for emphasis within body text
+    func bodyBold() -> some View {
+        self
+            .font(Typography.bodyBold)
+            .tracking(Typography.trackingNormal)
+            .lineSpacing(14 * (Typography.lineHeightRelaxed - 1))
+    }
+
+    /// Apply small body styling — secondary content
+    func bodySmall() -> some View {
+        self
+            .font(Typography.bodySmall)
+            .tracking(Typography.trackingNormal)
+            .lineSpacing(13 * (Typography.lineHeightRelaxed - 1))
+    }
+
+    /// Apply caption text styling — wide tracking for small-size legibility
     func captionText() -> some View {
         self
             .font(Typography.captionText)
             .tracking(Typography.trackingWide)
+            .lineSpacing(12 * (Typography.lineHeightNormal - 1))
     }
 
-    /// Apply monospace text styling (14pt monospaced)
+    /// Apply label styling — uppercase-friendly, wide tracking
+    func labelText() -> some View {
+        self
+            .font(Typography.label)
+            .tracking(Typography.trackingWide)
+    }
+
+    /// Apply monospace text styling — code and script content
     func monospaceText() -> some View {
         self
             .font(Typography.monospaceText)
             .tracking(Typography.trackingNormal)
-            .lineSpacing((14 * Typography.lineHeightNormal) - 14)
+            .lineSpacing(14 * (Typography.lineHeightRelaxed - 1))
+    }
+
+    /// Apply small monospace styling — inline code snippets
+    func monospaceSmall() -> some View {
+        self
+            .font(Typography.monospaceSmall)
+            .tracking(Typography.trackingNormal)
+            .lineSpacing(12 * (Typography.lineHeightNormal - 1))
     }
 }

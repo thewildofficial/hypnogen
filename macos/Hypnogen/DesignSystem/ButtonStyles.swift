@@ -127,13 +127,19 @@ struct PrimaryButtonStyle: ButtonStyle {
             .clipShape(RoundedRectangle(cornerRadius: size.cornerRadius, style: .continuous))
             .shadow(
                 color: glowColor(isPressed: configuration.isPressed),
-                radius: isHovered && isEnabled ? 16 : 0,
+                radius: isHovered && isEnabled ? 20 : 0,
                 x: 0,
                 y: 0
             )
+            .shadow(
+                color: glowColor(isPressed: configuration.isPressed).opacity(0.5),
+                radius: isHovered && isEnabled ? 8 : 0,
+                x: 0,
+                y: 2
+            )
             .scaleEffect(pressScale(configuration.isPressed))
             .animation(pressAnimation, value: configuration.isPressed)
-            .animation(hoverAnimation, value: isHovered)
+            .animation(hoverGlowAnimation, value: isHovered)
             .onHover { hovering in
                 guard isEnabled else { return }
                 isHovered = hovering
@@ -167,8 +173,8 @@ struct PrimaryButtonStyle: ButtonStyle {
         reduceMotion ? .default : AnimationTokens.springButton
     }
 
-    private var hoverAnimation: Animation {
-        reduceMotion ? .default : AnimationTokens.easeInOut
+    private var hoverGlowAnimation: Animation {
+        reduceMotion ? .default : AnimationTokens.springGlow
     }
 }
 
@@ -196,14 +202,20 @@ struct SecondaryButtonStyle: ButtonStyle {
             .clipShape(RoundedRectangle(cornerRadius: size.cornerRadius, style: .continuous))
             .overlay(strokeOverlay(isPressed: configuration.isPressed))
             .shadow(
-                color: isHovered && isEnabled ? Color.accentViolet.opacity(0.2) : .clear,
-                radius: isHovered && isEnabled ? 12 : 0,
+                color: isHovered && isEnabled ? Color.accentViolet.opacity(0.25) : .clear,
+                radius: isHovered && isEnabled ? 14 : 0,
                 x: 0,
                 y: 0
             )
+            .shadow(
+                color: isHovered && isEnabled ? Color.accentIndigo.opacity(0.15) : .clear,
+                radius: isHovered && isEnabled ? 6 : 0,
+                x: 0,
+                y: 1
+            )
             .scaleEffect(configuration.isPressed && isEnabled ? 0.97 : 1.0)
             .animation(pressAnimation, value: configuration.isPressed)
-            .animation(hoverAnimation, value: isHovered)
+            .animation(hoverGlowAnimation, value: isHovered)
             .onHover { hovering in
                 guard isEnabled else { return }
                 isHovered = hovering
@@ -241,8 +253,8 @@ struct SecondaryButtonStyle: ButtonStyle {
         reduceMotion ? .default : AnimationTokens.springButton
     }
 
-    private var hoverAnimation: Animation {
-        reduceMotion ? .default : AnimationTokens.easeInOut
+    private var hoverGlowAnimation: Animation {
+        reduceMotion ? .default : AnimationTokens.springGlow
     }
 }
 
@@ -283,7 +295,7 @@ struct GhostButtonStyle: ButtonStyle {
             }
             .scaleEffect(configuration.isPressed && isEnabled ? 0.97 : 1.0)
             .animation(pressAnimation, value: configuration.isPressed)
-            .animation(hoverAnimation, value: isHovered)
+            .animation(hoverGlowAnimation, value: isHovered)
             .onHover { hovering in
                 guard isEnabled else { return }
                 isHovered = hovering
@@ -300,8 +312,8 @@ struct GhostButtonStyle: ButtonStyle {
         reduceMotion ? .default : AnimationTokens.springButton
     }
 
-    private var hoverAnimation: Animation {
-        reduceMotion ? .default : AnimationTokens.easeInOut
+    private var hoverGlowAnimation: Animation {
+        reduceMotion ? .default : AnimationTokens.springGlow
     }
 }
 
@@ -334,14 +346,20 @@ struct DestructiveButtonStyle: ButtonStyle {
             .clipShape(RoundedRectangle(cornerRadius: size.cornerRadius, style: .continuous))
             .overlay(strokeOverlay(isPressed: configuration.isPressed))
             .shadow(
-                color: isHovered && isEnabled ? Self.destructiveRed.opacity(0.3) : .clear,
-                radius: isHovered && isEnabled ? 12 : 0,
+                color: isHovered && isEnabled ? Self.destructiveRed.opacity(0.35) : .clear,
+                radius: isHovered && isEnabled ? 16 : 0,
                 x: 0,
                 y: 0
             )
+            .shadow(
+                color: isHovered && isEnabled ? Self.destructiveRed.opacity(0.2) : .clear,
+                radius: isHovered && isEnabled ? 6 : 0,
+                x: 0,
+                y: 1
+            )
             .scaleEffect(configuration.isPressed && isEnabled ? 0.96 : 1.0)
             .animation(pressAnimation, value: configuration.isPressed)
-            .animation(hoverAnimation, value: isHovered)
+            .animation(hoverGlowAnimation, value: isHovered)
             .onHover { hovering in
                 guard isEnabled else { return }
                 isHovered = hovering
@@ -382,8 +400,8 @@ struct DestructiveButtonStyle: ButtonStyle {
         reduceMotion ? .default : AnimationTokens.springButton
     }
 
-    private var hoverAnimation: Animation {
-        reduceMotion ? .default : AnimationTokens.easeInOut
+    private var hoverGlowAnimation: Animation {
+        reduceMotion ? .default : AnimationTokens.springGlow
     }
 }
 

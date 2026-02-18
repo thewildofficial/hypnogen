@@ -22,6 +22,15 @@ struct ContentView: View {
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var isInitialLoadComplete = false
 
+    /// Whether the hero welcome should be shown instead of the selected destination.
+    private var shouldShowHero: Bool {
+        if selectedDestination == nil { return true }
+        if case .projectEditor = selectedDestination, projectsViewModel.projects.isEmpty {
+            return true
+        }
+        return false
+    }
+
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             sidebar
@@ -34,6 +43,11 @@ struct ContentView: View {
             guard isInitialLoadComplete else { return }
             if let project = newValue {
                 selectedDestination = .projectEditor(project)
+            }
+        }
+        .onChange(of: projectsViewModel.projects.count) { _, newCount in
+            if newCount == 0 {
+                selectedDestination = nil
             }
         }
         .task {
@@ -105,8 +119,10 @@ struct ContentView: View {
                 .accessibilityIdentifier("\(Constants.Accessibility.projectRow)_\(project.id)")
                 .contentShape(RoundedRectangle(cornerRadius: Radius.sm))
                 .onTapGesture {
-                    selectedDestination = .projectEditor(project)
-                    projectsViewModel.selectedProject = project
+                    withAnimation(AnimationTokens.springTransition) {
+                        selectedDestination = .projectEditor(project)
+                        projectsViewModel.selectedProject = project
+                    }
                 }
                 .contextMenu {
                     Button("Duplicate") {
@@ -137,7 +153,9 @@ struct ContentView: View {
             .accessibilityIdentifier(Constants.Accessibility.sidebarRenderQueueSection)
             .contentShape(RoundedRectangle(cornerRadius: Radius.sm))
             .onTapGesture {
-                selectedDestination = .renderQueue
+                withAnimation(AnimationTokens.springTransition) {
+                    selectedDestination = .renderQueue
+                }
             }
 
             SidebarRowView(
@@ -166,7 +184,9 @@ struct ContentView: View {
             .accessibilityIdentifier(Constants.Accessibility.sidebarOutputsSection)
             .contentShape(RoundedRectangle(cornerRadius: Radius.sm))
             .onTapGesture {
-                selectedDestination = .outputsLibrary
+                withAnimation(AnimationTokens.springTransition) {
+                    selectedDestination = .outputsLibrary
+                }
             }
         }
     }
@@ -180,8 +200,11 @@ struct ContentView: View {
                 .ignoresSafeArea()
 
             Group {
-                switch selectedDestination {
-                case .projectEditor(let project):
+                if shouldShowHero {
+                    heroWelcomeView
+                } else {
+                    switch selectedDestination {
+                    case .projectEditor(let project):
                     ProjectEditorView(
                         project: project,
                         onSave: { projectsViewModel.saveProject(project) },
@@ -192,38 +215,47 @@ struct ContentView: View {
                         }
                     )
                     .padding(Spacing.sm)
+                    .id(project.id)
 
-                case .renderQueue:
-                    RenderQueueView(viewModel: renderQueueViewModel)
-                        .padding(Spacing.sm)
+                    case .renderQueue:
+                        RenderQueueView(viewModel: renderQueueViewModel)
+                            .padding(Spacing.sm)
 
-                case .outputsLibrary:
-                    OutputsLibraryView(viewModel: outputsLibraryViewModel)
-                        .onAppear {
-                            outputsLibraryViewModel.refreshFromJobs(renderQueueViewModel.jobs)
-                        }
-                        .padding(Spacing.sm)
+                    case .outputsLibrary:
+                        OutputsLibraryView(viewModel: outputsLibraryViewModel)
+                            .onAppear {
+                                outputsLibraryViewModel.refreshFromJobs(renderQueueViewModel.jobs)
+                            }
+                            .padding(Spacing.sm)
 
-                case nil:
-                    heroWelcomeView
+                    case nil:
+                        heroWelcomeView
+                    }
                 }
             }
-            .transition(.opacity)
-            .animation(AnimationTokens.easeInOut, value: selectedDestination)
+            .transition(
+                .asymmetric(
+                    insertion: .opacity
+                        .combined(with: .offset(y: 6))
+                        .combined(with: .scale(scale: 0.995, anchor: .center)),
+                    removal: .opacity.combined(with: .offset(y: -4))
+                )
+            )
+            .animation(AnimationTokens.springTransition, value: selectedDestination)
         }
     }
 
     @ViewBuilder
     private var detailBackground: some View {
         Group {
-            if selectedDestination == nil {
+            if shouldShowHero {
                 GradientTokens.heroGradient
             } else {
                 GradientTokens.backgroundGradient
             }
         }
         .transition(.opacity)
-        .animation(AnimationTokens.easeInOut, value: selectedDestination)
+        .animation(AnimationTokens.springTransition, value: selectedDestination)
     }
 
     private var recentProjects: [Project] {

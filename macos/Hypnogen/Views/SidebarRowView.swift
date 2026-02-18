@@ -26,8 +26,10 @@ struct SidebarRowView: View {
         .overlay(borderOverlay)
         .clipShape(RoundedRectangle(cornerRadius: Radius.sm))
         .shadow(
-            color: isSelected ? Color.accentGlow.opacity(0.35) : .clear,
-            radius: isSelected ? 12 : 0,
+            color: isSelected
+                ? Color.accentGlow.opacity(0.35)
+                : (isHovered ? Color.accentViolet.opacity(0.15) : .clear),
+            radius: isSelected ? 12 : (isHovered ? 10 : 0),
             x: 0,
             y: 0
         )
@@ -37,7 +39,7 @@ struct SidebarRowView: View {
             value: isSelected
         )
         .animation(
-            MotionSensitiveAnimation.resolve(AnimationTokens.easeInOut, reduceMotion: reduceMotion),
+            MotionSensitiveAnimation.resolve(AnimationTokens.springGlow, reduceMotion: reduceMotion),
             value: isHovered
         )
         .onHover { hovering in

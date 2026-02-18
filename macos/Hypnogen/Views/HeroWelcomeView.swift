@@ -31,32 +31,84 @@ struct HeroWelcomeView: View {
         }
     }
 
-    // MARK: - Breathing Circle Effects (background provided by ContentView)
+    // MARK: - Breathing Circles
 
     private var breathingCircles: some View {
         ZStack {
-            Circle()
-                .fill(
-                    RadialGradient.fade(
-                        Color.accentViolet.opacity(breathPhase ? 0.18 : 0.08),
-                        radius: breathPhase ? 280 : 200
-                    )
-                )
-                .frame(width: 560, height: 560)
-                .offset(y: 60)
-                .breathingAnimation(reduceMotion: reduceMotion, value: breathPhase)
+            breathingRing(
+                color: Color.accentViolet,
+                size: 620,
+                opacityRange: (0.06, 0.22),
+                scaleRange: (0.92, 1.12),
+                blurRadius: 60,
+                duration: 5.5,
+                delay: 0.0
+            )
 
-            Circle()
-                .fill(
-                    RadialGradient.fade(
-                        Color.accentIndigo.opacity(breathPhase ? 0.12 : 0.05),
-                        radius: breathPhase ? 180 : 120
-                    )
-                )
-                .frame(width: 360, height: 360)
-                .offset(x: 160, y: -140)
-                .breathingAnimation(reduceMotion: reduceMotion, value: breathPhase)
+            breathingRing(
+                color: Color.accentIndigo,
+                size: 460,
+                opacityRange: (0.08, 0.28),
+                scaleRange: (0.88, 1.16),
+                blurRadius: 45,
+                duration: 4.5,
+                delay: 0.8
+            )
+
+            breathingRing(
+                color: Color.accentGlow,
+                size: 300,
+                opacityRange: (0.10, 0.32),
+                scaleRange: (0.90, 1.18),
+                blurRadius: 30,
+                duration: 3.8,
+                delay: 1.5
+            )
+
+            breathingRing(
+                color: Color.accentViolet,
+                size: 160,
+                opacityRange: (0.12, 0.35),
+                scaleRange: (0.85, 1.20),
+                blurRadius: 20,
+                duration: 3.2,
+                delay: 0.4
+            )
         }
+    }
+
+    private func breathingRing(
+        color: Color,
+        size: CGFloat,
+        opacityRange: (min: Double, max: Double),
+        scaleRange: (min: CGFloat, max: CGFloat),
+        blurRadius: CGFloat,
+        duration: Double,
+        delay: Double
+    ) -> some View {
+        Circle()
+            .fill(
+                RadialGradient(
+                    gradient: Gradient(colors: [
+                        color.opacity(breathPhase ? opacityRange.max : opacityRange.min),
+                        color.opacity(0),
+                    ]),
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: size / 2
+                )
+            )
+            .frame(width: size, height: size)
+            .scaleEffect(breathPhase ? scaleRange.max : scaleRange.min)
+            .blur(radius: blurRadius)
+            .animation(
+                reduceMotion
+                    ? nil
+                    : .easeInOut(duration: duration)
+                        .repeatForever(autoreverses: true)
+                        .delay(delay),
+                value: breathPhase
+            )
     }
 
     // MARK: - Content
