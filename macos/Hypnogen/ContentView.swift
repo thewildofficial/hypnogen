@@ -21,6 +21,7 @@ struct ContentView: View {
     @State private var selectedDestination: NavigationDestination?
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var isInitialLoadComplete = false
+    @State private var projectToDelete: Project?
 
     /// Whether the hero welcome should be shown instead of the selected destination.
     private var shouldShowHero: Bool {
@@ -39,6 +40,7 @@ struct ContentView: View {
             detailView
         }
         .navigationSplitViewStyle(.balanced)
+        .toolbarBackground(.hidden, for: .windowToolbar)
         .onChange(of: projectsViewModel.selectedProject) { _, newValue in
             guard isInitialLoadComplete else { return }
             if let project = newValue {
@@ -55,6 +57,24 @@ struct ContentView: View {
         }
         .sheet(isPresented: $onboardingViewModel.isPresented) {
             OnboardingView(viewModel: onboardingViewModel)
+        }
+        .confirmationDialog(
+            "Delete Project",
+            isPresented: Binding(
+                get: { projectToDelete != nil },
+                set: { if !$0 { projectToDelete = nil } }
+            ),
+            presenting: projectToDelete
+        ) { project in
+            Button("Delete", role: .destructive) {
+                projectsViewModel.deleteProject(project)
+                projectToDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                projectToDelete = nil
+            }
+        } message: { project in
+            Text("Are you sure you want to delete \"\(project.name)\"? This action cannot be undone.")
         }
     }
 
@@ -130,7 +150,7 @@ struct ContentView: View {
                     }
                     Divider()
                     Button("Delete", role: .destructive) {
-                        projectsViewModel.deleteProject(project)
+                        projectToDelete = project
                     }
                 }
             }

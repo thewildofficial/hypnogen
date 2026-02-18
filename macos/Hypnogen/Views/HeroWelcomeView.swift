@@ -163,23 +163,15 @@ struct HeroWelcomeView: View {
 
     private var brandingSection: some View {
         VStack(spacing: Spacing.sm) {
-            HStack(spacing: Spacing.md) {
-                Image("hypnogen_logo")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 48, height: 48)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-
-                Text("Hypnogen")
-                    .heroTitle()
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color.textPrimary, Color.accentGlow],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
+            Text("Hypnogen")
+                .heroTitle()
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.textPrimary, Color.accentGlow],
+                        startPoint: .leading,
+                        endPoint: .trailing
                     )
-            }
+                )
 
             Text("Create personalized hypnosis sessions")
                 .font(Typography.bodyText)

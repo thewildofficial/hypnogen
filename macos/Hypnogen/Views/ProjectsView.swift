@@ -10,6 +10,7 @@ struct ProjectsView: View {
     @Bindable var viewModel: ProjectsViewModel
 
     @State private var isHoveringAdd = false
+    @State private var projectToDelete: Project?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -26,6 +27,24 @@ struct ProjectsView: View {
         }
         .background(backgroundLayer)
         .frame(minWidth: 300, minHeight: 200)
+        .confirmationDialog(
+            "Delete Project",
+            isPresented: Binding(
+                get: { projectToDelete != nil },
+                set: { if !$0 { projectToDelete = nil } }
+            ),
+            presenting: projectToDelete
+        ) { project in
+            Button("Delete", role: .destructive) {
+                viewModel.deleteProject(project)
+                projectToDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                projectToDelete = nil
+            }
+        } message: { project in
+            Text("Are you sure you want to delete \"\(project.name)\"? This action cannot be undone.")
+        }
     }
 
     // MARK: - Toolbar
@@ -101,7 +120,7 @@ struct ProjectsView: View {
                         }
                         Divider()
                         Button("Delete", role: .destructive) {
-                            viewModel.deleteProject(project)
+                            projectToDelete = project
                         }
                         .accessibilityIdentifier(Constants.Accessibility.deleteProjectButton)
                     }

@@ -42,7 +42,7 @@ enum GradientTokens {
         endRadius: 120
     )
 
-    /// Deep purple with subtle accent color stops
+    /// Deep teal with subtle accent color stops
     static let heroGradient = LinearGradient(
         colors: [
             Color.backgroundDeep,
