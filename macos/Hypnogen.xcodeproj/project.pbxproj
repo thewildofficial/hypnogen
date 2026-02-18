@@ -48,6 +48,14 @@
 		A300000005 /* SpacingTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000005; };
 		A300000006 /* RadiusTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000006; };
 		A300000007 /* ShadowTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000007; };
+		A300000008 /* TypographyTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000008; };
+		A300000009 /* AnimationTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000009; };
+		A300000010 /* GradientTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000010; };
+		A300000011 /* GlassEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000011; };
+		A100000029 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000029; };
+		A100000030 /* HeroWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000030; };
+		A100000031 /* SidebarRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000031; };
+		A100000032 /* ProjectRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000032; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -104,6 +112,14 @@
 		B300000005 /* SpacingTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacingTokens.swift; sourceTree = "<group>"; };
 		B300000006 /* RadiusTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadiusTokens.swift; sourceTree = "<group>"; };
 		B300000007 /* ShadowTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadowTokens.swift; sourceTree = "<group>"; };
+		B300000008 /* TypographyTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypographyTokens.swift; sourceTree = "<group>"; };
+		B300000009 /* AnimationTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationTokens.swift; sourceTree = "<group>"; };
+		B300000010 /* GradientTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientTokens.swift; sourceTree = "<group>"; };
+		B300000011 /* GlassEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassEffects.swift; sourceTree = "<group>"; };
+		B100000029 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		B100000030 /* HeroWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroWelcomeView.swift; sourceTree = "<group>"; };
+		B100000031 /* SidebarRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarRowView.swift; sourceTree = "<group>"; };
+		B100000032 /* ProjectRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectRowView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -159,6 +175,10 @@
 				B300000005 /* SpacingTokens.swift */,
 				B300000006 /* RadiusTokens.swift */,
 				B300000007 /* ShadowTokens.swift */,
+				B300000008 /* TypographyTokens.swift */,
+				B300000009 /* AnimationTokens.swift */,
+				B300000010 /* GradientTokens.swift */,
+				B300000011 /* GlassEffects.swift */,
 			);
 			path = DesignSystem;
 			sourceTree = "<group>";
@@ -211,6 +231,10 @@
 				B100000020 /* TroubleshootingView.swift */,
 				B100000024 /* CalibrationView.swift */,
 				B100000027 /* WorkerStatusView.swift */,
+				B100000029 /* EmptyStateView.swift */,
+				B100000030 /* HeroWelcomeView.swift */,
+				B100000031 /* SidebarRowView.swift */,
+				B100000032 /* ProjectRowView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -378,6 +402,14 @@
 				A300000005 /* SpacingTokens.swift in Sources */,
 				A300000006 /* RadiusTokens.swift in Sources */,
 				A300000007 /* ShadowTokens.swift in Sources */,
+				A300000008 /* TypographyTokens.swift in Sources */,
+				A300000009 /* AnimationTokens.swift in Sources */,
+				A300000010 /* GradientTokens.swift in Sources */,
+				A300000011 /* GlassEffects.swift in Sources */,
+				A100000029 /* EmptyStateView.swift in Sources */,
+				A100000030 /* HeroWelcomeView.swift in Sources */,
+				A100000031 /* SidebarRowView.swift in Sources */,
+				A100000032 /* ProjectRowView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
