@@ -19,7 +19,7 @@ Example:
 from __future__ import annotations
 
 from threading import Lock
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Any, Dict
 
 if TYPE_CHECKING:
     from hypnogen.core.tts_providers.base import TTSProvider
@@ -27,6 +27,24 @@ if TYPE_CHECKING:
 import numpy as np
 import torch
 from kokoro import KPipeline
+
+from hypnogen.core.tts_result_cache import get_cached_tts, cache_tts_result
+
+
+# Module-level singleton for default QuantizedProvider to avoid repeated quantization
+_default_quantized_provider: Any | None = None
+_default_provider_lock = Lock()
+
+
+def _get_default_provider() -> Any:
+    """Get or create the singleton QuantizedProvider instance."""
+    global _default_quantized_provider
+    if _default_quantized_provider is None:
+        with _default_provider_lock:
+            if _default_quantized_provider is None:
+                from hypnogen.core.tts_providers.quantized import QuantizedProvider
+                _default_quantized_provider = QuantizedProvider()
+    return _default_quantized_provider
 
 
 # Module-level cache: reuse KPipeline instances by lang_code
@@ -70,7 +88,8 @@ def synthesize(
     text: str,
     voice: str = "af_heart",
     speed: float = 1.0,
-    sr: int = 24000
+    sr: int = 24000,
+    use_cache: bool = True,
 ) -> tuple[np.ndarray, int]:
     """Synthesize text to speech using Kokoro TTS.
     
@@ -89,6 +108,7 @@ def synthesize(
             Kokoro's native rate is 24000Hz. Other values accepted
             but the actual synthesis still happens at 24000Hz.
             Use audio resampling later in the pipeline if needed.
+        use_cache: Whether to use TTS result caching (default: True).
     
     Returns:
         Tuple of (audio, sample_rate) where:
@@ -117,6 +137,12 @@ def synthesize(
     if speed <= 0:
         raise ValueError("Speed must be positive")
     
+    # Check cache first
+    if use_cache:
+        cached = get_cached_tts(text, voice, speed, sr)
+        if cached is not None:
+            return cached
+    
     # Extract language code from voice ID (first character)
     # e.g., "af_heart" -> "a", "bm_george" -> "b"
     lang_code = voice[0] if voice else "a"
@@ -139,6 +165,10 @@ def synthesize(
     
     audio = np.concatenate(audio_chunks)
     
+    # Cache result after generation
+    if use_cache:
+        cache_tts_result(text, voice, speed, sr, audio)
+
     return audio, sr
 
 
@@ -152,11 +182,11 @@ def synthesize_batch(
     """Synthesize a batch of texts using a TTS provider.
 
     Convenience function that wraps the provider pattern. If no provider
-    is given, uses the default PyTorchProvider (sequential, single-process).
+    is given, uses the default QuantizedProvider (INT8 quantized, ~24% faster).
 
     Args:
         texts: List of text strings to synthesize.
-        provider: Optional TTSProvider instance. Defaults to PyTorchProvider.
+        provider: Optional TTSProvider instance. Defaults to QuantizedProvider.
         voice: Voice ID (default: "af_heart").
         speed: Speech speed multiplier (default: 1.0).
 
@@ -170,10 +200,22 @@ def synthesize_batch(
         >>> provider.shutdown()
     """
     if provider is None:
-        from hypnogen.core.tts_providers.pytorch import PyTorchProvider
-        provider = PyTorchProvider()
+        provider = _get_default_provider()
 
     return provider.synthesize_batch(texts, voice=voice, speed=speed)
+
+
+def warmup_tts(voice: str = "af_heart", speed: float = 1.0) -> float:
+    """Warm up the TTS system on application startup.
+
+    Triggers model quantization and reduces variance on
+    the first real synthesis call.
+
+    Returns:
+        Time taken for warmup in seconds.
+    """
+    provider = _get_default_provider()
+    return provider.warmup(voice=voice, speed=speed)
 
 
 def list_voices() -> list[str]:
