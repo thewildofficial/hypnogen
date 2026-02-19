@@ -465,10 +465,14 @@ class TestSynthesizeBatch:
         )
         assert len(results) == 1
 
-    @patch("hypnogen.core.tts_providers.pytorch.synthesize")
-    def test_synthesize_batch_default_provider(self, mock_synth):
-        """synthesize_batch with no provider uses PyTorchProvider."""
+    @patch("hypnogen.core.tts_providers.quantized.synthesize")
+    @patch("hypnogen.core.tts_providers.quantized._get_pipeline")
+    def test_synthesize_batch_default_provider(self, mock_get_pipeline, mock_synth):
+        """synthesize_batch with no provider uses QuantizedProvider."""
         mock_synth.side_effect = _make_synthesize_side_effect()
+        mock_pipeline = Mock()
+        mock_pipeline.model = None
+        mock_get_pipeline.return_value = mock_pipeline
 
         from hypnogen.core.tts import synthesize_batch
 

@@ -152,11 +152,11 @@ def synthesize_batch(
     """Synthesize a batch of texts using a TTS provider.
 
     Convenience function that wraps the provider pattern. If no provider
-    is given, uses the default PyTorchProvider (sequential, single-process).
+    is given, uses the default QuantizedProvider (INT8 quantized, ~24% faster).
 
     Args:
         texts: List of text strings to synthesize.
-        provider: Optional TTSProvider instance. Defaults to PyTorchProvider.
+        provider: Optional TTSProvider instance. Defaults to QuantizedProvider.
         voice: Voice ID (default: "af_heart").
         speed: Speech speed multiplier (default: 1.0).
 
@@ -170,8 +170,8 @@ def synthesize_batch(
         >>> provider.shutdown()
     """
     if provider is None:
-        from hypnogen.core.tts_providers.pytorch import PyTorchProvider
-        provider = PyTorchProvider()
+        from hypnogen.core.tts_providers.quantized import QuantizedProvider
+        provider = QuantizedProvider()
 
     return provider.synthesize_batch(texts, voice=voice, speed=speed)
 
