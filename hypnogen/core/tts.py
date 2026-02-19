@@ -28,6 +28,8 @@ import numpy as np
 import torch
 from kokoro import KPipeline
 
+from hypnogen.core.tts_result_cache import get_cached_tts, cache_tts_result
+
 
 # Module-level cache: reuse KPipeline instances by lang_code
 _pipeline_cache: Dict[str, KPipeline] = {}
@@ -70,7 +72,8 @@ def synthesize(
     text: str,
     voice: str = "af_heart",
     speed: float = 1.0,
-    sr: int = 24000
+    sr: int = 24000,
+    use_cache: bool = True,
 ) -> tuple[np.ndarray, int]:
     """Synthesize text to speech using Kokoro TTS.
     
@@ -89,6 +92,7 @@ def synthesize(
             Kokoro's native rate is 24000Hz. Other values accepted
             but the actual synthesis still happens at 24000Hz.
             Use audio resampling later in the pipeline if needed.
+        use_cache: Whether to use TTS result caching (default: True).
     
     Returns:
         Tuple of (audio, sample_rate) where:
@@ -117,6 +121,12 @@ def synthesize(
     if speed <= 0:
         raise ValueError("Speed must be positive")
     
+    # Check cache first
+    if use_cache:
+        cached = get_cached_tts(text, voice, speed)
+        if cached is not None:
+            return cached
+    
     # Extract language code from voice ID (first character)
     # e.g., "af_heart" -> "a", "bm_george" -> "b"
     lang_code = voice[0] if voice else "a"
@@ -138,6 +148,10 @@ def synthesize(
         return np.array([], dtype=np.float32), sr
     
     audio = np.concatenate(audio_chunks)
+    
+    # Cache result after generation
+    if use_cache:
+        cache_tts_result(text, voice, speed, audio, sr)
     
     return audio, sr
 
