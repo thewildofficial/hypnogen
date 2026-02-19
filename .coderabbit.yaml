@@ -1,0 +1,10 @@
+language: en
+reviews:
+  review_status: true
+  auto_review:
+    enabled: true
+    base_branches:
+      - master
+      - main
+      - development
+      - pr/*
