@@ -19,7 +19,7 @@ Example:
 from __future__ import annotations
 
 from threading import Lock
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Any, Dict
 
 if TYPE_CHECKING:
     from hypnogen.core.tts_providers.base import TTSProvider
@@ -29,6 +29,22 @@ import torch
 from kokoro import KPipeline
 
 from hypnogen.core.tts_result_cache import get_cached_tts, cache_tts_result
+
+
+# Module-level singleton for default QuantizedProvider to avoid repeated quantization
+_default_quantized_provider: Any | None = None
+_default_provider_lock = Lock()
+
+
+def _get_default_provider() -> Any:
+    """Get or create the singleton QuantizedProvider instance."""
+    global _default_quantized_provider
+    if _default_quantized_provider is None:
+        with _default_provider_lock:
+            if _default_quantized_provider is None:
+                from hypnogen.core.tts_providers.quantized import QuantizedProvider
+                _default_quantized_provider = QuantizedProvider()
+    return _default_quantized_provider
 
 
 # Module-level cache: reuse KPipeline instances by lang_code
@@ -123,7 +139,7 @@ def synthesize(
     
     # Check cache first
     if use_cache:
-        cached = get_cached_tts(text, voice, speed)
+        cached = get_cached_tts(text, voice, speed, sr)
         if cached is not None:
             return cached
     
@@ -151,8 +167,8 @@ def synthesize(
     
     # Cache result after generation
     if use_cache:
-        cache_tts_result(text, voice, speed, audio, sr)
-    
+        cache_tts_result(text, voice, speed, sr, audio)
+
     return audio, sr
 
 
@@ -184,8 +200,7 @@ def synthesize_batch(
         >>> provider.shutdown()
     """
     if provider is None:
-        from hypnogen.core.tts_providers.quantized import QuantizedProvider
-        provider = QuantizedProvider()
+        provider = _get_default_provider()
 
     return provider.synthesize_batch(texts, voice=voice, speed=speed)
 
@@ -199,8 +214,7 @@ def warmup_tts(voice: str = "af_heart", speed: float = 1.0) -> float:
     Returns:
         Time taken for warmup in seconds.
     """
-    from hypnogen.core.tts_providers.quantized import QuantizedProvider
-    provider = QuantizedProvider()
+    provider = _get_default_provider()
     return provider.warmup(voice=voice, speed=speed)
 
 
