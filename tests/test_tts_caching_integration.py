@@ -16,7 +16,7 @@ class TestTTSCachingIntegration:
 
         # Pre-cache a result
         cached_audio = np.array([0.5, 0.6, 0.7], dtype=np.float32)
-        cache_tts_result("cached text", "af_heart", 1.0, cached_audio, 24000)
+        cache_tts_result("cached text", "af_heart", 1.0, 24000, cached_audio)
 
         # Mock the pipeline to ensure it's NOT called
         with patch('hypnogen.core.tts._get_pipeline') as mock_get_pipeline:
@@ -53,7 +53,7 @@ class TestTTSCachingIntegration:
 
         # Pre-cache
         cached_audio = np.array([0.5], dtype=np.float32)
-        cache_tts_result("test", "af_heart", 1.0, cached_audio, 24000)
+        cache_tts_result("test", "af_heart", 1.0, 24000, cached_audio)
 
         # Call with use_cache=False should bypass cache
         # This is harder to test without mocking internals
