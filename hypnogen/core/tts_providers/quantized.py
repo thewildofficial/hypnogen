@@ -120,3 +120,23 @@ class QuantizedProvider(TTSProvider):
             audio, sr = synthesize(text, voice=voice, speed=speed)
             results.append((audio, sr))
         return results
+
+    def warmup(self, voice: str = "af_heart", speed: float = 1.0) -> float:
+        """Warm up the quantized model to reduce cold-start latency.
+
+        Performs a dummy synthesis to trigger quantization and model loading.
+
+        Returns:
+            Time taken for warmup in seconds.
+        """
+        import time
+        start = time.perf_counter()
+
+        try:
+            _ = self.synthesize_batch(["warmup"], voice=voice, speed=speed)
+            elapsed = time.perf_counter() - start
+            logger.info(f"Quantized model warmup complete in {elapsed:.3f}s")
+            return elapsed
+        except Exception as e:
+            logger.warning(f"Warmup failed: {e}")
+            return 0.0

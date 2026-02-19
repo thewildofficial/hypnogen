@@ -190,6 +190,20 @@ def synthesize_batch(
     return provider.synthesize_batch(texts, voice=voice, speed=speed)
 
 
+def warmup_tts(voice: str = "af_heart", speed: float = 1.0) -> float:
+    """Warm up the TTS system on application startup.
+
+    Triggers model quantization and reduces variance on
+    the first real synthesis call.
+
+    Returns:
+        Time taken for warmup in seconds.
+    """
+    from hypnogen.core.tts_providers.quantized import QuantizedProvider
+    provider = QuantizedProvider()
+    return provider.warmup(voice=voice, speed=speed)
+
+
 def list_voices() -> list[str]:
     """List available voice IDs for Kokoro TTS.
     
