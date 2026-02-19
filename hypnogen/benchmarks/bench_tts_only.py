@@ -230,7 +230,9 @@ def normalize_audio_result(result: Any) -> bytes:
 
         normalized_chunks = []
         for chunk in result:
-            normalized_chunks.append(normalize_audio_result(chunk))
+            normalized = normalize_audio_result(chunk)
+            if isinstance(normalized, bytes):
+                normalized_chunks.append(normalized)
         return b"".join(normalized_chunks)
     
     return result
@@ -299,15 +301,17 @@ def run_benchmark(
     
     # Start log capture for CoreML
     log_process = None
+    log_file_handle = None
     if provider_name == 'coreml':
         evidence_dir = Path('.sisyphus/evidence')
         evidence_dir.mkdir(parents=True, exist_ok=True)
         log_file = evidence_dir / 'coreml-log-stream.txt'
+        log_file_handle = open(log_file, 'w')
         log_process = subprocess.Popen(
             ['log', 'stream', '--predicate', 
              'sender == "AppleNeuralEngine" OR subsystem == "com.apple.CoreML"',
              '--info'],
-            stdout=open(log_file, 'w'),
+            stdout=log_file_handle,
             stderr=subprocess.STDOUT
         )
         # Give log stream a moment to start
@@ -373,6 +377,8 @@ def run_benchmark(
                 log_process.wait(timeout=2)
             except subprocess.TimeoutExpired:
                 log_process.kill()
+        if log_file_handle:
+            log_file_handle.close()
     
     provider.shutdown() if hasattr(provider, 'shutdown') else None
     
