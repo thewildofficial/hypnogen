@@ -58,6 +58,7 @@ class JobStore:
                 "request": request,
                 "result": None,
                 "cancelled": False,
+                "completed_at": None,
             }
         return job_id
 
@@ -102,11 +103,13 @@ class JobStore:
 
     def mark_completed(self, job_id: str, result: dict[str, Any]) -> None:
         """Transition job to COMPLETED with render result."""
+        completed_at = datetime.now(tz=timezone.utc)
         with self._lock:
             entry = self._jobs.get(job_id)
             if entry is None:
                 return
             entry["result"] = result
+            entry["completed_at"] = completed_at
             entry["status"] = RenderJobStatus(
                 job_id=job_id,
                 status=JobStatus.COMPLETED,
@@ -128,11 +131,17 @@ class JobStore:
             )
 
     def cancel(self, job_id: str) -> bool:
-        """Set cancellation flag. Returns True if job existed."""
+        """Set cancellation flag. Returns True if job existed and was cancellable.
+
+        Note: Completed jobs cannot be cancelled to preserve artifact access.
+        """
         with self._lock:
             entry = self._jobs.get(job_id)
             if entry is None:
                 return False
+            # Don't cancel completed jobs - preserves artifact access
+            if entry["status"].status == JobStatus.COMPLETED:
+                return True  # Job exists, but no-op for completed jobs
             entry["cancelled"] = True
             old = entry["status"]
             entry["status"] = RenderJobStatus(
@@ -170,6 +179,7 @@ class JobStore:
             result = entry["result"]
             if result is None:
                 return None
+            completed_at = entry.get("completed_at")
 
         paths = result.get("paths", {})
         return RenderJobArtifacts(
@@ -177,7 +187,7 @@ class JobStore:
             mix_wav_url=paths.get("mix", ""),
             stems=paths.get("stems", {}),
             metadata_url=paths.get("metadata", ""),
-            created_at=datetime.now(tz=timezone.utc),
+            created_at=completed_at or datetime.now(tz=timezone.utc),
         )
 
 
